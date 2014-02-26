@@ -10,11 +10,12 @@ struct CpG {
 };
 
 void usage(char *prog) {
-    printf("Usage: %s genome_directory file.bedGraph\n", prog);
+    printf("Usage: %s genome_directory file.bedGraph [file2.bedGraph file3.bedGraph]\n", prog);
     printf("\n\
     Merge strand metrics for individual CpG calls (i.e. if there are separate\n\
     methylation metrics for the C's on the + and - strand of a CpG site, combine\n\
-    them).\n\
+    them). If you specify more than one bedGraph file, they will each be merged\n\
+    independently and written to separate files.\n\
 \n\
     -h      Print this message.\n\
 \n\
@@ -42,7 +43,7 @@ FILE * generate_output_name(char *iname) {
     }
     sprintf(oname, "%s.merged.bedGraph", oname);
 
-    printf("Output will be written to %s\n", oname);
+    printf("Writting %s\n", oname);
     of = fopen(oname, "w");
     free(oname);
     return of;
@@ -82,8 +83,8 @@ inline void process_line(char *line, struct CpG *current_line) {
 }
 
 int main(int argc, char *argv[]) {
-    int i, last_tid = 0, mpercent;
-    char *fname = NULL, *line = malloc(sizeof(char) * MAXREAD);
+    int i, fstart = -1, last_tid = 0, mpercent;
+    char *line = malloc(sizeof(char) * MAXREAD);
     char *chrom, *last_chrom = NULL;
     char base;
     unsigned long long offset;
@@ -112,8 +113,9 @@ int main(int argc, char *argv[]) {
             chromosomes.max_genome = strtoull(argv[++i], NULL, 10);
         } else if(config.genome_dir == NULL) {
             config.genome_dir = argv[i];
-        } else if(fname == NULL) {
-            fname = argv[i];
+        } else if(fstart == -1) {
+            fstart = i;
+            break;
         } else {
             printf("Got an unknown option: %s\n", argv[i]);
             usage(argv[0]);
@@ -121,13 +123,10 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    if(config.genome_dir == NULL || fname == NULL) {
+    if(config.genome_dir == NULL || fstart == -1) {
         printf("Genome directory or SAM/BAM input file not specified!\n");
         usage(argv[0]);
     }
-
-    //Generate the output names and open the output files
-    of = generate_output_name(fname);
 
     //Read in the genome
     printf("Allocating space for %llu characters\n", chromosomes.max_genome); fflush(stdout);
@@ -139,79 +138,84 @@ int main(int argc, char *argv[]) {
     }
     read_genome();
 
-    ifile = fopen(fname, "r");
-    while(fgets(line, MAXREAD, ifile) != NULL) {
-        chrom = strtok(line, "\t");
-        if(last_chrom == NULL || strcmp(chrom, last_chrom) != 0) {
-            last_tid = char2tid(chrom);
-            if(last_chrom != NULL) free(last_chrom);
-            last_chrom = strdup(chrom);
-        }
-        current_line.tid = last_tid;
-        process_line(line, &current_line);
+    for(i=fstart; i<argc; i++) {
+        //Generate the output names and open the output files
+        ifile = fopen(argv[i], "r");
 
-        //Compare the current and last calls
-        if(current_line.tid == last_line.tid && current_line.start == last_line.end) {
-            //Are these different strands of a single CpG?
-            offset = chromosomes.chromosome[last_line.tid]->offset;
-            base = toupper(*(chromosomes.genome+offset+last_line.start));
-            if(base == 'C') { //Yes
-                last_line.end++;
-                last_line.n_methylated += current_line.n_methylated;
-                last_line.n_unmethylated += current_line.n_unmethylated;
-                mpercent = (int) (1000 * ((float) last_line.n_methylated)/(float)(last_line.n_methylated + last_line.n_unmethylated));
-                fprintf(of, "%s\t%i\t%i\t%i\t%i\t%i\n", chromosomes.chromosome[last_tid]->chrom, last_line.start, \
-                    last_line.end, mpercent, last_line.n_methylated, last_line.n_unmethylated);
-                last_line.tid = -1;
-            } else { //No
-                last_line.start--;
-                mpercent = (int) (1000 * ((float) last_line.n_methylated)/(float)(last_line.n_methylated + last_line.n_unmethylated));
-                fprintf(of, "%s\t%i\t%i\t%i\t%i\t%i\n", chromosomes.chromosome[last_tid]->chrom, last_line.start, \
-                    last_line.end, mpercent, last_line.n_methylated, last_line.n_unmethylated);
+        of = generate_output_name(argv[i]);
+        while(fgets(line, MAXREAD, ifile) != NULL) {
+            chrom = strtok(line, "\t");
+            if(last_chrom == NULL || strcmp(chrom, last_chrom) != 0) {
+                last_tid = char2tid(chrom);
+                if(last_chrom != NULL) free(last_chrom);
+                last_chrom = strdup(chrom);
+            }
+            current_line.tid = last_tid;
+            process_line(line, &current_line);
+
+            //Compare the current and last calls
+            if(current_line.tid == last_line.tid && current_line.start == last_line.end) {
+                //Are these different strands of a single CpG?
+                offset = chromosomes.chromosome[last_line.tid]->offset;
+                base = toupper(*(chromosomes.genome+offset+last_line.start));
+                if(base == 'C') { //Yes
+                    last_line.end++;
+                    last_line.n_methylated += current_line.n_methylated;
+                    last_line.n_unmethylated += current_line.n_unmethylated;
+                    mpercent = (int) (1000 * ((float) last_line.n_methylated)/(float)(last_line.n_methylated + last_line.n_unmethylated));
+                    fprintf(of, "%s\t%i\t%i\t%i\t%i\t%i\n", chromosomes.chromosome[last_tid]->chrom, last_line.start, \
+                        last_line.end, mpercent, last_line.n_methylated, last_line.n_unmethylated);
+                    last_line.tid = -1;
+                } else { //No
+                    last_line.start--;
+                    mpercent = (int) (1000 * ((float) last_line.n_methylated)/(float)(last_line.n_methylated + last_line.n_unmethylated));
+                    fprintf(of, "%s\t%i\t%i\t%i\t%i\t%i\n", chromosomes.chromosome[last_tid]->chrom, last_line.start, \
+                        last_line.end, mpercent, last_line.n_methylated, last_line.n_unmethylated);
+                    last_line.tid = current_line.tid;
+                    last_line.start = current_line.start;
+                    last_line.end = current_line.end;
+                    last_line.n_methylated = current_line.n_methylated;
+                    last_line.n_unmethylated = current_line.n_unmethylated;
+                }
+            } else {
+                if(last_line.tid != -1) {
+                    offset = chromosomes.chromosome[last_line.tid]->offset;
+                    base = toupper(*(chromosomes.genome+offset+last_line.start));
+                    if(base == 'C') { //Yes
+                        last_line.end++;
+                    } else {
+                        last_line.start--;
+                    }
+                    mpercent = (int) (1000 * ((float) last_line.n_methylated)/(float)(last_line.n_methylated + last_line.n_unmethylated));
+                    fprintf(of, "%s\t%i\t%i\t%i\t%i\t%i\n", chromosomes.chromosome[last_line.tid]->chrom, last_line.start, \
+                        last_line.end, mpercent, last_line.n_methylated, last_line.n_unmethylated);
+                }
                 last_line.tid = current_line.tid;
                 last_line.start = current_line.start;
                 last_line.end = current_line.end;
                 last_line.n_methylated = current_line.n_methylated;
                 last_line.n_unmethylated = current_line.n_unmethylated;
             }
-        } else {
-            if(last_line.tid != -1) {
-                offset = chromosomes.chromosome[last_line.tid]->offset;
-                base = toupper(*(chromosomes.genome+offset+last_line.start));
-                if(base == 'C') { //Yes
-                    last_line.end++;
-                } else {
-                    last_line.start--;
-                }
-                mpercent = (int) (1000 * ((float) last_line.n_methylated)/(float)(last_line.n_methylated + last_line.n_unmethylated));
-                fprintf(of, "%s\t%i\t%i\t%i\t%i\t%i\n", chromosomes.chromosome[last_line.tid]->chrom, last_line.start, \
-                    last_line.end, mpercent, last_line.n_methylated, last_line.n_unmethylated);
+        }
+        //Attend to a possible remnant line
+        if(last_line.tid != -1) {
+            offset = chromosomes.chromosome[last_tid]->offset;
+            base = toupper(*(chromosomes.genome+offset+last_line.start));
+            if(base == 'C') { //Yes
+                last_line.end++;
+            } else {
+                last_line.start--;
             }
-            last_line.tid = current_line.tid;
-            last_line.start = current_line.start;
-            last_line.end = current_line.end;
-            last_line.n_methylated = current_line.n_methylated;
-            last_line.n_unmethylated = current_line.n_unmethylated;
+            mpercent = (int) (1000 * ((float) last_line.n_methylated)/(float)(last_line.n_methylated + last_line.n_unmethylated));
+            fprintf(of, "%s\t%i\t%i\t%i\t%i\t%i\n", chromosomes.chromosome[last_tid]->chrom, last_line.start, \
+                last_line.end, mpercent, last_line.n_methylated, last_line.n_unmethylated);
         }
-    }
-    //Attend to a possible remnant line
-    if(last_line.tid != -1) {
-        offset = chromosomes.chromosome[last_tid]->offset;
-        base = toupper(*(chromosomes.genome+offset+last_line.start));
-        if(base == 'C') { //Yes
-            last_line.end++;
-        } else {
-            last_line.start--;
-        }
-        mpercent = (int) (1000 * ((float) last_line.n_methylated)/(float)(last_line.n_methylated + last_line.n_unmethylated));
-        fprintf(of, "%s\t%i\t%i\t%i\t%i\t%i\n", chromosomes.chromosome[last_tid]->chrom, last_line.start, \
-            last_line.end, mpercent, last_line.n_methylated, last_line.n_unmethylated);
+        fclose(of);
+        fclose(ifile);
     }
 
     //Close things up
     free(line);
-    fclose(of);
-    fclose(ifile);
     free(chromosomes.genome);
     for(i=0; i<chromosomes.nchromosomes; i++) {
         free((chromosomes.chromosome[i])->chrom);
