@@ -310,6 +310,10 @@ even when limited to the same resources.
      convenient to overestimate this slightly, so if your genome is 3.8
      gigabases, then just use 4000000000 as the genome size.
 
+  *  bison_merge_CpGs can now take multiple input files at once.
+
+  *  A number of small bug fixes. 
+
 ###0.2.4
   *  Fixed an off-by-one error in bison_mbias. Also, at some point 1-methylation
      percentage started getting calculated. That's been fixed.
