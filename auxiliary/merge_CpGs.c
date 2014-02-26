@@ -210,6 +210,7 @@ int main(int argc, char *argv[]) {
             fprintf(of, "%s\t%i\t%i\t%i\t%i\t%i\n", chromosomes.chromosome[last_tid]->chrom, last_line.start, \
                 last_line.end, mpercent, last_line.n_methylated, last_line.n_unmethylated);
         }
+        last_line.tid = -1; //Otherwise, if this will be written as the first line of the next file!
         fclose(of);
         fclose(ifile);
     }
