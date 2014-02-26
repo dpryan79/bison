@@ -300,6 +300,16 @@ even when limited to the same resources.
 
 ##Changes
 
+###0.2.5
+  *  Added --genome-size option to a number of the tools. Many of the bison 
+     programs need to read the genome into memory. By default, 3 gigabases worth
+     of memory are allocated for that and the size increased as needed. For
+     smaller genomes, this wasted space. For larger genomes, the constant
+     reallocation of space could seriously slow things down. Consequently, this
+     option was added to any tool that reads the genome into memory. It's
+     convenient to overestimate this slightly, so if your genome is 3.8
+     gigabases, then just use 4000000000 as the genome size.
+
 ###0.2.4
   *  Fixed an off-by-one error in bison_mbias. Also, at some point 1-methylation
      percentage started getting calculated. That's been fixed.
