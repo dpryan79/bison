@@ -1,11 +1,11 @@
 WORK=/home/ryand#This should be changed to match your needs
 PREFIX = $(WORK)/bin
 CC = mpicc
-INCLUDE_DIRS = -I$(WORK)/include #This should be were samtools was compiled -I/path/to/samtools/compilation
-LIB_DIRS = -L$(WORK)/lib #As above, but -L/path/to/samtools/compilation
+INCLUDE_DIRS = -I$(WORK)/Downloads/samtools-0.1.19 #This should be were samtools was compiled -I/path/to/samtools/compilation
+LIB_DIRS = -L$(WORK)/Downloads/samtools-0.1.19 #As above, but -L/path/to/samtools/compilation
 OPTS = -Wall -O3 #-DDEBUG #-DNOTHROTTLE -g
-MPI = -lmpich -lmpl #This is usually appropriate for mpich2
-#MPI = #This is appropriate for mvapich2
+#MPI = -lmpich -lmpl #This is usually appropriate for mpich2
+MPI = #This is appropriate for mvapich2
 #MPI = -lmpi #This is usually appropriate for openmpi
 
 #Don't edit below here unless you know what you're doing!

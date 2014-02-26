@@ -76,6 +76,15 @@ void usage(char *prog) {
 --unmapped  Save unaligned reads to a file or files (as appropriate). This files\n \
             will be placed in the same directory as the source fastq files,\n \
             regardless of whether \"-o\" is used.\n \
+\n\
+--genome-size Many of the bison tools need to read the genome into memory. By\n \
+            default, they allocate 3000000000 bases worth of memory for this and\n \
+            increase that as needed. However, this can sometimes be far more\n \
+            than is needed (meaning wasted memory) or far too little (in which\n \
+            case the process can become quite slow). If you input the\n \
+            approximate size of your genome here (in bases), then you can\n \
+            maximize performance and minimize wasted space. It's convenient to\n \
+            round up a little.\n \
 \n");
 #ifndef NOTHROTTLE
     printf(" \
@@ -160,6 +169,7 @@ int main(int argc, char *argv[]) {
     config.reads_in_queue = 1000000;
     nwritten = 0;
 #endif
+    chromosomes.max_genome = 3000000000;
     chromosomes.nchromosomes = 0; //We need to initialize the struct
 
     //These are only used during cleanup and will otherwise cause an error
@@ -241,6 +251,9 @@ int main(int argc, char *argv[]) {
             global_debug_taskid = atoi(argv[i]);
             taskid = global_debug_taskid;
 #endif
+        } else if(strcmp(argv[i], "--genome-size") == 0) {
+            i++;
+            chromosomes.max_genome = strtoull(argv[i], NULL, 10);
         } else if(strcmp(argv[i], "--score-min") == 0) {
             i++;
             printf("Changing --score-min from 'L,-0.6,-0.6' to %s!\n", argv[i]);
@@ -317,7 +330,6 @@ int main(int argc, char *argv[]) {
 
     //Allocate room for the genome, if needed
     if(taskid == MASTER) {
-        chromosomes.max_genome = 3000000000;
         if(!config.quiet) printf("Allocating space for %llu characters\n", chromosomes.max_genome);
         fflush(stdout);
         chromosomes.genome = malloc(sizeof(char)*chromosomes.max_genome);

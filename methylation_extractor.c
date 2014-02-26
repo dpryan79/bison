@@ -812,6 +812,14 @@ void usage(char *prog) {
 \n\
     -CTOB         Like -OT, but for reads mapping to the complementary to\n\
                   original bottom strand.\n\
+    --genome-size Many of the bison tools need to read the genome into memory.\n\
+                  By default, they allocate 3000000000 bases worth of memory for\n\
+                  this and increase that as needed. However, this can sometimes\n\
+                  be far more than is needed (meaning wasted memory) or far too\n\
+                  little (in which case the process can become quite slow). If\n\
+                  you input the approximate size of your genome here (in bases),\n\
+                  then you can maximize performance and minimize wasted space.\n\
+                  It's convenient to round up a little.\n\
 \n\
     -max-sites-size N    This option can increase or decrease memory\n\
                   requirements by changing the number of methylation calls\n\
@@ -832,6 +840,7 @@ int main(int argc, char *argv[]) {
     CHGlist = init_list();
     CHHlist = init_list();
     config.genome_dir = NULL;
+    chromosomes.max_genome = 3000000000;
     chromosomes.nchromosomes = 0;
     storeCpG = storeCHG = storeCHH = 0;
     storeCpG = 1;
@@ -875,6 +884,9 @@ int main(int argc, char *argv[]) {
             fill_bounds(argv[++i], CTOB);
         } else if(config.genome_dir == NULL) {
             config.genome_dir = argv[i];
+        } else if(strcmp(argv[i], "--genome-size") == 0) {
+            i++;
+            chromosomes.max_genome = strtoull(argv[i], NULL, 10);
         } else if(fp == NULL) {
             if(argv[i][strlen(argv[i])-3] == 'b') {
                 fp = samopen(argv[i], "rb", NULL);
@@ -898,7 +910,6 @@ int main(int argc, char *argv[]) {
     generate_output_names(argv[argc-1], of);
 
     //Read in the genome
-    chromosomes.max_genome = 3000000000;
     printf("Allocating space for %llu characters\n", chromosomes.max_genome); fflush(stdout);
     chromosomes.genome = malloc(sizeof(char)*chromosomes.max_genome);
     *chromosomes.genome = '\0';

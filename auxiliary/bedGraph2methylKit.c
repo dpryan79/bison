@@ -16,7 +16,16 @@ void usage(char *prog) {
     The CpGs in the file should not be merged (i.e., they should represent\n\
     individual strand)! See the methylKit documentation for the file format.\n\
 \n\
-    -h            Print this message.\n\
+    -h      Print this message.\n\
+\n\
+    --genome-size Many of the bison tools need to read the genome into memory. By\n\
+            default, they allocate 3000000000 bases worth of memory for this and\n\
+            increase that as needed. However, this can sometimes be far more\n\
+            than is needed (meaning wasted memory) or far too little (in which\n\
+            case the process can become quite slow). If you input the\n\
+            approximate size of your genome here (in bases), then you can\n\
+            maximize performance and minimize wasted space. It's convenient to\n\
+            round up a little.\n\
 \n");
 }
 
@@ -82,6 +91,7 @@ int main(int argc, char *argv[]) {
     struct CpG current_line;
 
     config.genome_dir = NULL;
+    chromosomes.max_genome = 3000000000;
     chromosomes.nchromosomes = 0;
 
     /* read in the file names */
@@ -97,6 +107,9 @@ int main(int argc, char *argv[]) {
             config.genome_dir = argv[i];
         } else if(fname == NULL) {
             fname = argv[i];
+        } else if(strcmp(argv[i], "--genome-size") == 0) {
+            i++;
+            chromosomes.max_genome = strtoull(argv[i], NULL, 10);
         } else {
             printf("Got an unknown option: %s\n", argv[i]);
             usage(argv[0]);
@@ -113,7 +126,6 @@ int main(int argc, char *argv[]) {
     of = generate_output_name(fname);
 
     //Read in the genome
-    chromosomes.max_genome = 3000000000;
     printf("Allocating space for %llu characters\n", chromosomes.max_genome); fflush(stdout);
     chromosomes.genome = malloc(sizeof(char)*chromosomes.max_genome);
     *chromosomes.genome = '\0';

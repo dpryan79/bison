@@ -90,7 +90,7 @@ void read_genome() {
                 } else {
                     //Ensure that we have enough space in chromosomes.genome
                     if(offset + 10000 >= chromosomes.max_genome) {
-                        chromosomes.max_genome += 100000;
+                        chromosomes.max_genome += 1000000;
                         chromosomes.genome = realloc(chromosomes.genome, sizeof(char) * chromosomes.max_genome);
                         g = chromosomes.genome + offset;
                      }
