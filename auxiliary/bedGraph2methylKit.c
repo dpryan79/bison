@@ -10,7 +10,7 @@ struct CpG {
 };
 
 void usage(char *prog) {
-    printf("Usage: %s genome_directory file.bedGraph\n", prog);
+    printf("Usage: %s [OPTIONS] genome_directory file.bedGraph\n", prog);
     printf("\n\
     Convert a CpG bedGraph file to the format required for methylKit.\n\
     The CpGs in the file should not be merged (i.e., they should represent\n\

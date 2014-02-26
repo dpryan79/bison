@@ -22,7 +22,7 @@ void next_line(FILE *fp, char *buffer) {
 }
 
 void usage(char *prog) {
-    printf("Usage: %s genome_directory input.bedGraph output.txt\n", prog);
+    printf("Usage: %s [OPTIONS] genome_directory input.bedGraph output.txt\n", prog);
     printf("\n\
     Calculate a histogram of per-CpG coverage. N.B., the genome and bedGraph\n\
     file need to be in the same order (they will be if the bedGraph file was\n\

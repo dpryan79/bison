@@ -5,7 +5,7 @@
 #define MAXChromosome 400000000
 
 void usage(char *prog_name) {
-    printf("Usage: %s (options) GENOME.FA OUTPUT.FA\n",prog_name);
+    printf("Usage: %s [options] GENOME.FA OUTPUT.FA\n",prog_name);
     printf("\t-n X	Maximum number of bases in each read (prior to CG/TG/etc. trimming)\n\t\tDefault is 36. N.B. 10%% more is used to the output.\n");
     printf("\t-TaqI	Create a reduced representation genome that was cut by TaqI as well as MspI.\n");
     printf("\t-h	Print this message\n");

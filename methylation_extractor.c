@@ -769,7 +769,7 @@ void fill_bounds(char *str, int bounds[4]) {
 }
 
 void usage(char *prog) {
-    printf("Usage: %s OPTIONS genome_directory input.(sam|bam)\n", prog);
+    printf("Usage: %s [OPTIONS] genome_directory input.(sam|bam)\n", prog);
     printf("\n\
     Extract methylation information into a bedGraph file or files. By default,\n\
     only CpG metrics are output\n\

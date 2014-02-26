@@ -40,6 +40,7 @@ ofCov.write("\n")
 
 n_finished = 0
 n_total = len(files)
+found = 0 #This is only used if we're extracting only a single contig
 while(n_finished < n_total) :
     i = 0
     lowest = 0
@@ -65,6 +66,11 @@ while(n_finished < n_total) :
         if(lines[lowest][0] == args.chr) :
             ofbed.write("%s\t%i\t%i\n" % (lines[lowest][0], lines[lowest][1], lines[lowest][2])) #Now 1-based
             output = 1
+            found = 1
+        else :
+            if(found == 1) :
+                #Finished with the given contig
+                break
     else :
         ofbed.write("%s\t%i\t%i\n" % (lines[lowest][0], lines[lowest][1], lines[lowest][2])) #Now 1-based
         output = 1

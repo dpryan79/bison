@@ -10,7 +10,7 @@ struct CpG {
 };
 
 void usage(char *prog) {
-    printf("Usage: %s genome_directory file.bedGraph [file2.bedGraph file3.bedGraph]\n", prog);
+    printf("Usage: %s [OPTIONS] genome_directory file.bedGraph [file2.bedGraph file3.bedGraph]\n", prog);
     printf("\n\
     Merge strand metrics for individual CpG calls (i.e. if there are separate\n\
     methylation metrics for the C's on the + and - strand of a CpG site, combine\n\
