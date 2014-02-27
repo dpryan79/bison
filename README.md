@@ -330,7 +330,7 @@ even when limited to the same resources.
 
   *  bison_merge_CpGs can now take multiple input files at once.
 
-  *  A number of small bug fixes. 
+  *  A number of small bug fixes, such as when "genome_dir" doesn't end in a /.
 
 ###0.2.4
   *  Fixed an off-by-one error in bison_mbias. Also, at some point 1-methylation
