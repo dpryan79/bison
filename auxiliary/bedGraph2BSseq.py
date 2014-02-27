@@ -55,7 +55,12 @@ while(n_finished < n_total) :
                 lowest += 1
         i += 1
 
-    current = lines[lowest]
+    current = ['','','','','']
+    current[0] = lines[lowest][0]
+    current[1] = lines[lowest][1]
+    current[2] = lines[lowest][2]
+    current[3] = lines[lowest][3]
+    current[4] = lines[lowest][4]
     if(lines[lowest][0] == None) :
         print("Oh shit, this shouldn't happen!")
         print(lowest, lines)
