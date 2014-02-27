@@ -261,7 +261,7 @@ int main(int argc, char *argv[]) {
             chromosomes.max_genome = strtoull(argv[i], NULL, 10);
         } else if(strcmp(argv[i], "--score-min") == 0) {
             i++;
-            printf("Changing --score-min from 'L,-0.6,-0.6' to %s!\n", argv[i]);
+            if(!config.quiet) printf("Changing --score-min from '%c,%f,%f' to %s!\n", config.scoremin_type, config.scoremin_intercept, config.scoremin_coef, argv[i]);
             config.scoremin_type = strtok(argv[i], ",")[0];
             config.scoremin_intercept = (float) atof(strtok(NULL, ","));
             config.scoremin_coef = (float) atof(strtok(NULL, ","));
