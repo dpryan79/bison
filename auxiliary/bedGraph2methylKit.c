@@ -10,7 +10,7 @@ struct CpG {
 };
 
 void usage(char *prog) {
-    printf("Usage: %s [OPTIONS] genome_directory file.bedGraph\n", prog);
+    printf("Usage: %s [OPTIONS] genome_directory/ file.bedGraph\n", prog);
     printf("\n\
     Convert a CpG bedGraph file to the format required for methylKit.\n\
     The CpGs in the file should not be merged (i.e., they should represent\n\
@@ -104,7 +104,11 @@ int main(int argc, char *argv[]) {
             usage(argv[0]);
             return 0;
         } else if(config.genome_dir == NULL) {
-            config.genome_dir = argv[i];
+            config.genome_dir = strdup(argv[i]);
+            if(*(config.genome_dir+strlen(config.genome_dir)-1) != '/') {
+                config.genome_dir = realloc(config.genome_dir, sizeof(char) * (strlen(config.genome_dir)+2));
+                sprintf(config.genome_dir, "%s/", config.genome_dir);
+            }
         } else if(fname == NULL) {
             fname = argv[i];
         } else if(strcmp(argv[i], "--genome-size") == 0) {
@@ -159,6 +163,7 @@ int main(int argc, char *argv[]) {
     }
 
     //Close things up
+    if(config.genome_dir != NULL) free(config.genome_dir);
     free(line);
     fclose(of);
     fclose(ifile);

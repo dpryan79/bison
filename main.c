@@ -114,6 +114,7 @@ int main(int argc, char *argv[]) {
     config.quiet = 0;
     config.FASTQ1 = NULL;
     config.FASTQ2 = NULL;
+    config.genome_dir = NULL;
     chromosomes.max_genome = 3000000000;
     chromosomes.nchromosomes = 0; //We need to initialize the struct
 
@@ -154,7 +155,11 @@ int main(int argc, char *argv[]) {
             config.FASTQ1 = argv[i];
         } else if(strcmp(argv[i], "-g") == 0) {
             i++;
-            config.genome_dir = argv[i];
+            config.genome_dir = strdup(argv[i]);
+            if(*(config.genome_dir+strlen(config.genome_dir)-1) != '/') {
+                config.genome_dir = realloc(config.genome_dir, sizeof(char) * (strlen(config.genome_dir)+2));
+                sprintf(config.genome_dir, "%s/", config.genome_dir);
+            }
         } else if(strcmp(argv[i], "-p") == 0) {
             i++;
             config.nthreads = atoi(argv[i]);
@@ -387,6 +392,7 @@ int main(int argc, char *argv[]) {
 
     //Clean up
     if(config.odir != NULL) free(config.odir);
+    if(config.genome_dir != NULL) free(config.genome_dir);
     quit(3, 0);
     return 0;
 }

@@ -769,7 +769,7 @@ void fill_bounds(char *str, int bounds[4]) {
 }
 
 void usage(char *prog) {
-    printf("Usage: %s [OPTIONS] genome_directory input.(sam|bam)\n", prog);
+    printf("Usage: %s [OPTIONS] genome_directory/ input.(sam|bam)\n", prog);
     printf("\n\
     Extract methylation information into a bedGraph file or files. By default,\n\
     only CpG metrics are output\n\
@@ -883,7 +883,11 @@ int main(int argc, char *argv[]) {
         } else if (strcmp(argv[i], "-CTOB") == 0) {
             fill_bounds(argv[++i], CTOB);
         } else if(config.genome_dir == NULL) {
-            config.genome_dir = argv[i];
+            config.genome_dir = strdup(argv[i]);
+            if(*(config.genome_dir+strlen(config.genome_dir)-1) != '/') {
+                config.genome_dir = realloc(config.genome_dir, sizeof(char) * (strlen(config.genome_dir)+2));
+                sprintf(config.genome_dir, "%s/", config.genome_dir);
+            }
         } else if(strcmp(argv[i], "--genome-size") == 0) {
             i++;
             chromosomes.max_genome = strtoull(argv[i], NULL, 10);
@@ -1000,6 +1004,7 @@ int main(int argc, char *argv[]) {
         free(*(chromosomes.chromosome+i));
     }
     free(chromosomes.chromosome);
+    if(config.genome_dir != NULL) free(config.genome_dir);
     destroy_methyl_list(CpGlist);
     destroy_methyl_list(CHGlist);
     destroy_methyl_list(CHHlist);

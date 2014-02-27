@@ -2,7 +2,7 @@
 #include <wordexp.h>
 
 void usage(char *prog) {
-    printf("Usage: %s [OPTIONS] -g genome_dir {-1 fastq_A1.gz,fastq_B1.gz -2 fastq_A2.gz,fastq_B2.gz | -U fastq.gz}\n", prog);
+    printf("Usage: %s [OPTIONS] -g genome_dir/ {-1 fastq_A1.gz,fastq_B1.gz -2 fastq_A2.gz,fastq_B2.gz | -U fastq.gz}\n", prog);
     printf("\n \
     N.B., Bison has a number of defaults that are different from that of bowtie2.\n \
     All of these can be changed with the normal bowtie2 options, which change\n \
@@ -162,6 +162,7 @@ int main(int argc, char *argv[]) {
     config.n_compression_threads = 0;
     config.unmapped1 = NULL;
     config.unmapped2 = NULL;
+    config.genome_dir = NULL;
     global_header = NULL;
     unmapped1 = NULL;
     unmapped2 = NULL;
@@ -215,7 +216,11 @@ int main(int argc, char *argv[]) {
             config.FASTQ1 = argv[i];
         } else if(strcmp(argv[i], "-g") == 0) {
             i++;
-            config.genome_dir = argv[i];
+            config.genome_dir = strdup(argv[i]);
+            if(*(config.genome_dir+strlen(config.genome_dir)-1) != '/') {
+                config.genome_dir = realloc(config.genome_dir, sizeof(char) * (strlen(config.genome_dir)+2));
+                sprintf(config.genome_dir, "%s/", config.genome_dir);
+            }
         } else if(strcmp(argv[i], "-p") == 0) {
             i++;
             config.nthreads = atoi(argv[i]);

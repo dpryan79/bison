@@ -10,7 +10,7 @@ struct CpG {
 };
 
 void usage(char *prog) {
-    printf("Usage: %s [OPTIONS] genome_directory file.bedGraph [file2.bedGraph file3.bedGraph]\n", prog);
+    printf("Usage: %s [OPTIONS] genome_directory/ file.bedGraph [file2.bedGraph file3.bedGraph]\n", prog);
     printf("\n\
     Merge strand metrics for individual CpG calls (i.e. if there are separate\n\
     methylation metrics for the C's on the + and - strand of a CpG site, combine\n\
@@ -112,7 +112,11 @@ int main(int argc, char *argv[]) {
         } else if(strcmp(argv[i], "--genome-size") == 0) {
             chromosomes.max_genome = strtoull(argv[++i], NULL, 10);
         } else if(config.genome_dir == NULL) {
-            config.genome_dir = argv[i];
+            config.genome_dir = strdup(argv[i]);
+            if(*(config.genome_dir+strlen(config.genome_dir)-1) != '/') {
+                config.genome_dir = realloc(config.genome_dir, sizeof(char) * (strlen(config.genome_dir)+2));
+                sprintf(config.genome_dir, "%s/", config.genome_dir);
+            }
         } else if(fstart == -1) {
             fstart = i;
             break;
@@ -216,6 +220,7 @@ int main(int argc, char *argv[]) {
     }
 
     //Close things up
+    if(config.genome_dir != NULL) free(config.genome_dir);
     free(line);
     free(chromosomes.genome);
     for(i=0; i<chromosomes.nchromosomes; i++) {
