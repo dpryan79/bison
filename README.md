@@ -87,8 +87,8 @@ PREFIX = ~/bin
 
 ##Usage
 
-Indexing of a directory of fasta (extension .fa or .fasta) can be performed
-as follows:
+One can index all fasta files (files with extension .fa or .fasta) in a
+directory as follows:
 
     bison_index [OPTIONS] directory/
 
@@ -300,7 +300,25 @@ even when limited to the same resources.
 
 ##Changes
 
-###0.2.5
+###0.3.0
+  *  Note: The indices produced by previous versions are not guaranteed to be
+     compatible unless you used a multi-fasta file. There was a serious
+     implementation problem with how bison_index worked when given multiple
+     files as input and how multiple files were read into memory in previous
+     versions. If you used a multi-fasta file, then everything will continue
+     to work correctly. However, if you used multiple fasta files in a list
+     then I strongly encourage you to delete the previous indices (just remove
+     the bisulfite_genome directory) and reindex. The technical reasons for this
+     issue are that when the bison tools previously read multiple fasta files
+     into memory, they would do so in whatever order they appeared in the
+     directory structure, which can change over time and isn't guaranteed to
+     match the order of files someone specified during indexing. While the
+     alignments wouldn't be affected by this, the methylation calls could have
+     been seriously compromised. In this version, bison_index will only accept a
+     directory, not a list of files, and it will always alphasort() the list of
+     files in that directory prior to processing. This should eliminate this
+     problem. My apologies to anyone affected by this.
+
   *  Added --genome-size option to a number of the tools. Many of the bison 
      programs need to read the genome into memory. By default, 3 gigabases worth
      of memory are allocated for that and the size increased as needed. For

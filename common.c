@@ -37,6 +37,19 @@ unsigned long long *calculate_positions(bam1_t *read) {
 
 /******************************************************************************
 *
+*   Given a struct dirent, return 1 if it's a fasta file. Otherwise, return 0.
+*
+*******************************************************************************/
+int filter(const struct dirent *file) {
+    char *p = strrchr(file->d_name, '.');
+
+    if(p == NULL) return 0; //No file extension!
+    if(strcmp(p, ".fa") == 0 || strcmp(p, ".fasta") == 0) return 1; //A fasta file
+    return 0;
+}
+
+/******************************************************************************
+*
 *   Read in all .fa and .fasta files within config.genome_dir. The sequences 
 *   are concatenated onto chromosomes.genome. The global chromosomes structure
 *   is modified with each new chromosome.
@@ -46,71 +59,67 @@ unsigned long long *calculate_positions(bam1_t *read) {
 *
 *******************************************************************************/
 void read_genome() {
-    DIR *dir = opendir(config.genome_dir);
+//    DIR *dir = opendir(config.genome_dir);
     FILE *fp;
     char *p, *line = malloc(sizeof(char)*MAXREAD), *fullpath = NULL;
     char *g = chromosomes.genome;
-    struct dirent *file;
+    struct dirent **files;
     unsigned long long offset = 0;
     unsigned long long length = 0;
-    int end, nchromosomes, i;
+    int end, nchromosomes, i, j, nfiles;
     chromosome_struct *chromosome = NULL;
 
-    while((file = readdir(dir)) != NULL) {
-        p = strrchr(file->d_name, '.');
-        if(p == NULL) continue;
-        if(strcmp(p, ".fa") == 0 || strcmp(p, ".fasta") == 0) {
-            //This is a fasta file that we need to read into the genome array and append a chromosome_struct onto chromosomes_struct
-            fullpath = realloc(fullpath, sizeof(char)*(strlen(config.genome_dir)+strlen(file->d_name)+1));
-            sprintf(fullpath, "%s%s",config.genome_dir,file->d_name);
-            fp = fopen(fullpath, "r");
-            if(!config.quiet) printf("Reading in %s\n", fullpath);
-            fflush(stdout);
-            while(fgets(line, MAXREAD, fp) != NULL) {
-                end=strlen(line);
-                if(line[end-1] == '\n') line[end-1] = '\0';
-                if(line[0] == '>') {
-                    //Store the length of the previous contig, if there was one
-                    if(chromosome != NULL) {
-                        chromosome->length = length;
-                    }
-
-                    //Initialize a new chromosome_struct and lengthen the global chromosomes struct
-                    nchromosomes = ++chromosomes.nchromosomes;
-                    chromosomes.chromosome = realloc(chromosomes.chromosome, sizeof(chromosome_struct*) * nchromosomes);
-                    chromosomes.chromosome[nchromosomes-1] = malloc(sizeof(chromosome_struct));
-                    chromosome = chromosomes.chromosome[nchromosomes-1];
-                    chromosome->offset = offset;
-                    p = strchr(line, ' ');
-                    if(p != NULL) *p = '\0'; //If there's anything after the name, ignore it
-                    chromosome->chrom = malloc(sizeof(char)*strlen(line));
-                    strcpy(chromosome->chrom, (line+1)); //ignore the ">"
-                    length = 0;
-                    chromosome->offset = offset;
-                } else {
-                    //Ensure that we have enough space in chromosomes.genome
-                    if(offset + 10000 >= chromosomes.max_genome) {
-                        chromosomes.max_genome += 1000000;
-                        chromosomes.genome = realloc(chromosomes.genome, sizeof(char) * chromosomes.max_genome);
-                        g = chromosomes.genome + offset;
-                     }
-                     offset += end-1;
-                     length += end-1;
-                     for(i=0; i<strlen(line); i++) *(line+i) = toupper(*(line+i)); //Make everything upper case
-                     strncpy(g, line, end);
-                     g += end-1;
+    nfiles = scandir(config.genome_dir, &files, filter, alphasort);
+    for(j=0; j<nfiles; j++) {
+        //This is a fasta file that we need to read into the genome array and append a chromosome_struct onto chromosomes_struct
+        fullpath = realloc(fullpath, sizeof(char)*(strlen(config.genome_dir)+strlen(files[j]->d_name)+1));
+        sprintf(fullpath, "%s%s",config.genome_dir,files[j]->d_name);
+        fp = fopen(fullpath, "r");
+        if(!config.quiet) printf("Reading in %s\n", fullpath);
+        fflush(stdout);
+        while(fgets(line, MAXREAD, fp) != NULL) {
+            end=strlen(line);
+            if(line[end-1] == '\n') line[end-1] = '\0';
+            if(line[0] == '>') {
+                //Store the length of the previous contig, if there was one
+                if(chromosome != NULL) {
+                    chromosome->length = length;
                 }
+
+                //Initialize a new chromosome_struct and lengthen the global chromosomes struct
+                nchromosomes = ++chromosomes.nchromosomes;
+                chromosomes.chromosome = realloc(chromosomes.chromosome, sizeof(chromosome_struct*) * nchromosomes);
+                chromosomes.chromosome[nchromosomes-1] = malloc(sizeof(chromosome_struct));
+                chromosome = chromosomes.chromosome[nchromosomes-1];
+                chromosome->offset = offset;
+                p = strchr(line, ' ');
+                if(p != NULL) *p = '\0'; //If there's anything after the name, ignore it
+                chromosome->chrom = malloc(sizeof(char)*strlen(line));
+                strcpy(chromosome->chrom, (line+1)); //ignore the ">"
+                length = 0;
+                chromosome->offset = offset;
+            } else {
+                //Ensure that we have enough space in chromosomes.genome
+                if(offset + 10000 >= chromosomes.max_genome) {
+                    chromosomes.max_genome += 1000000;
+                    chromosomes.genome = realloc(chromosomes.genome, sizeof(char) * chromosomes.max_genome);
+                    g = chromosomes.genome + offset;
+                 }
+                 offset += end-1;
+                 length += end-1;
+                 for(i=0; i<strlen(line); i++) *(line+i) = toupper(*(line+i)); //Make everything upper case
+                 strncpy(g, line, end);
+                 g += end-1;
             }
-            //Store the last contig's length
-            chromosome->length = length;
-            if(!config.quiet) printf("Finished %s\n", fullpath);
-            fflush(stdout);
-            fclose(fp);
         }
+        //Store the last contig's length
+        chromosome->length = length;
+        if(!config.quiet) printf("Finished %s\n", fullpath);
+        fflush(stdout);
+        fclose(fp);
     }
     free(line);
     free(fullpath);
-    closedir(dir);
 }
 
 /******************************************************************************
