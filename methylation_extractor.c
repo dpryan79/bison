@@ -736,16 +736,19 @@ void generate_output_names(char *ifile, struct of_struct *of) {
         sprintf(oname, "%s_CpG.bedGraph", tmp);
         printf("CpG counts will be written to %s\n", oname);
         of->CpG = fopen(oname, "w");
+        fprintf(of->CpG, "track type=bedGraph\n");
     }
     if(storeCHG) {
         sprintf(oname, "%s_CHG.bedGraph", tmp);
         printf("CHG counts will be written to %s\n", oname);
         of->CHG = fopen(oname, "w");
+        fprintf(of->CHG, "track type=bedGraph\n");
     }
     if(storeCHH) {
         sprintf(oname, "%s_CHH.bedGraph", tmp);
         printf("CHH counts will be written to %s\n", oname);
         of->CHH = fopen(oname, "w");
+        fprintf(of->CHH, "track type=bedGraph\n");
     }
 
     free(tmp);

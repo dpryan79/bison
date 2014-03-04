@@ -299,6 +299,14 @@ true for `bison_herd`. Both bison and `bison_herd` seem to be faster than bismar
 even when limited to the same resources.
 
 ##Changes
+###0.3.1
+  *  The various bedGraph files didn't previously have a "track" line. The UCSC
+     Genome Browser requires this, so bedGraph files produced will now contain 
+     it. It should be noted that this is the very minimal line required. Bison
+     does not provide facilities for making these changes, users need to edit
+     things manually or use external programs for this. It should also be noted
+     that any changes to the "track" or other header lines should be made after
+     all processing with Bison is complete.
 
 ###0.3.0
   *  Note: The indices produced by previous versions are not guaranteed to be

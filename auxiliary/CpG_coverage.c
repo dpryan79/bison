@@ -12,6 +12,7 @@ struct {
 
 void next_line(FILE *fp, char *buffer) {
     if(fgets(buffer, 1024, fp) != NULL) {
+        if(strncmp("track", buffer, 5) == 0) if(fgets(buffer, 1024, fp) == NULL) return; //Skip the track line
         cur_line.chrom = strtok(buffer, "\t");
         cur_line.position = strtoull(strtok(NULL, "\t"), NULL, 10);
         cur_line.end = strtoull(strtok(NULL, "\t"), NULL, 10);

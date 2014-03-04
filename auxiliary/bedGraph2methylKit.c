@@ -142,6 +142,7 @@ int main(int argc, char *argv[]) {
     ifile = fopen(fname, "r");
     fprintf(of, "chrBase\tchr\tbase\tstrand\tcoverage\tfreqC\tfreqT\n");
     while(fgets(line, MAXREAD, ifile) != NULL) {
+        if(strncmp("track", line, 5) == 0) continue; //Skip the track line
         chrom = strtok(line, "\t");
         if(last_chrom == NULL || strcmp(chrom, last_chrom) != 0) {
             last_tid = char2tid(chrom);

@@ -45,6 +45,7 @@ FILE * generate_output_name(char *iname) {
 
     printf("Writting %s\n", oname);
     of = fopen(oname, "w");
+    fprintf(of, "track type=bedGraph\n");
     free(oname);
     return of;
 }
@@ -148,6 +149,7 @@ int main(int argc, char *argv[]) {
 
         of = generate_output_name(argv[i]);
         while(fgets(line, MAXREAD, ifile) != NULL) {
+            if(strncmp(line, "track", 5) == 0) if(fgets(line, MAXREAD, ifile) == NULL) break; //Skip the track line
             chrom = strtok(line, "\t");
             if(last_chrom == NULL || strcmp(chrom, last_chrom) != 0) {
                 last_tid = char2tid(chrom);
