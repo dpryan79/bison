@@ -49,6 +49,7 @@ auxiliary:	merge_CpGs bedGraph2methylKit make_reduced_genome aux_python_scripts 
 aux_python_scripts:
 	cp -f auxiliary/bedGraph2BSseq.py ./
 	cp -f auxiliary/merge_bedGraphs.py ./
+	cp -f auxiliary/bedGraph2MethylSeekR.py ./
 
 CpG_coverage:	common.o
 	$(CC) -c $(OPTS) $(INCLUDE_DIRS) auxiliary/CpG_coverage.c -o auxiliary/CpG_coverage.o
@@ -72,11 +73,12 @@ install :
 	if [ -f bison ]; then mv bison $(PREFIX)/ ; fi;
 	if [ -f bedGraph2methylKit ]; then mv bedGraph2methylKit $(PREFIX)/ ; fi;
 	if [ -f bedGraph2BSseq.py ]; then chmod a+x bedGraph2BSseq.py ; mv bedGraph2BSseq.py $(PREFIX)/ ; fi;
+	if [ -f bedGraph2MethylSeekR.py ]; then chmod a+x bedGraph2MethylSeekR.py ; mv bedGraph2MethylSeekR.py $(PREFIX)/ ; fi;
 	if [ -f merge_bedGraphs.py ]; then chmod a+x merge_bedGraphs.py ; mv merge_bedGraphs.py $(PREFIX)/ ; fi;
 	if [ -f check_accuracy ]; then mv check_accuracy $(PREFIX)/ ; fi;
 	if [ -f make_reduced_genome ]; then mv make_reduced_genome $(PREFIX)/ ; fi;
 
 clean:
-	rm -f *.o bison bison_* bedGraph2methylKit check_accuracy make_reduced_genome bedGraph2BSseq.py
+	rm -f *.o bison bison_* bedGraph2methylKit check_accuracy make_reduced_genome *.py
 	rm -f herd/*.o
 	rm -f auxiliary/*.o

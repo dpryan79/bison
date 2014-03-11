@@ -170,6 +170,11 @@ As above, but each bedGraph file is converted to a .methylKit file. The
 bedGraphs should be of CpGs and not have had the strands merged (i.e., don't run
 the merge_CpGs command below).
 
+bedGraph2MethylSeekR
+As above, but each bedGraph file is converted into a .MethylSeekR file. The
+bedGraphs MUST be merged before-hand with bison_merge_CpGs to create per-CpG
+metrics, as this is what MethylSeekR is expecting.
+
 make_reduced_genome.c
 Create a reduced representation genome appropriate for reads of a given size
 ($size, default is 36bp). MspI and TaqI libraries are supported. Nucleotides
