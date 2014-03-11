@@ -358,7 +358,7 @@ even when limited to the same resources.
      that any changes to the "track" or other header lines should be made after
      all processing with Bison is complete.
 
-  *  Add conversion scripts for import into MethylSeekR, BiSeq, BEAT, and DMAP.
+  *  Add conversion scripts for import into MethylSeekR, BiSeq, and BEAT.
 
 ###0.3.0
   *  Note: The indices produced by previous versions are not guaranteed to be
