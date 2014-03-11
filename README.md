@@ -214,13 +214,13 @@ suffice to load everything into R:
 
 ```R
 exptData <- SimpleList(Sequencer="Some sequencer", Year="2014") #This is just descriptive information
-M <- as.matrix(read.delim("Chr17.M", header=T))
-Cov <- as.matrix(read.delim("Chr17.Cov", header=T))
-bed <- read.delim("Chr17.bed", header=F)
+M <- as.matrix(read.delim("chr17.M", header=T))
+Cov <- as.matrix(read.delim("chr17.Cov", header=T))
+bed <- read.delim("chr17.bed", header=F)
 gr <- GRanges(seqnames=Rle(bed$V1),ranges=IRanges(start=bed$V2+1, end=bed$V3), strand=Rle("*", nrow(bed)))
-groups <- data.frame(row.names=colnames(M),
+groups <- DataFrame(row.names=colnames(M),
     group = c(1,1,1,1,2,2,2,2)) #A very simple experiment with 2 groups of 4 samples
-BSraw(exptData=exptData, rowData=gr, colData=groups, totalReads=Cov, methReads=M)
+d <- BSraw(exptData=exptData, rowData=gr, colData=groups, totalReads=Cov, methReads=M)
 ```
 
 ###BEAT
