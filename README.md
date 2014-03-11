@@ -173,7 +173,17 @@ the merge_CpGs command below).
 ###`bedGraph2MethylSeekR`
 As above, but each bedGraph file is converted into a .MethylSeekR file. The
 bedGraphs MUST be merged before-hand with bison_merge_CpGs to create per-CpG
-metrics, as this is what MethylSeekR is expecting.
+metrics, as this is what MethylSeekR is expecting. Input is performed with the
+`readMethylome()` function. Chromosome lengths can be computed with:
+samtools faidx genome.fa
+where genome.fa is a multifasta file containing all of the chromosomes. The
+resulting .fai file is simply a text file and can be loaded into R with:
+
+```R
+fai <- read.delim("genome.fa.fai", header=F)
+chromosome_lengths <- fai$V2
+readMethylome("file.MethylSeekR", chromosome_lengths)
+```
 
 ###`make_reduced_genome`
 Create a reduced representation genome appropriate for reads of a given size
