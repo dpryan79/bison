@@ -201,6 +201,29 @@ have a single-C resolution, this will convert that to single-CpG resolution by
 summing Cs in the same CpG from opposite strands. This saves space and will
 often speed up downstream statistics.
 
+##Importing into other analysis packages
+While there are helper scripts, mentioned above, for a number of packages, other
+packages either do not require a helper script or can use one of the
+aforementioned scripts. Import instructions for such packages are mentioned
+below.
+
+###BiSeq
+BiSeq requires input in an identical format as BSseq. Consequently, just use the
+bedGraph2BSseq.py helper script. The following example commands should then
+suffice to load everything into R:
+
+```R
+exptData <- SimpleList(Sequencer="Some sequencer", Year="2014") #This is just descriptive information
+M <- as.matrix(read.delim("Chr17.M", header=T))
+Cov <- as.matrix(read.delim("Chr17.Cov", header=T))
+bed <- read.delim("Chr17.bed", header=F)
+#Remember that BED and bedGraph files are 0-based!
+gr <- GRanges(seqnames=Rle(bed$V1),ranges=IRanges(start=bed$V2+1, end=bed$V3), strand=Rle("*", nrow(bed)))
+groups <- data.frame(row.names=colnames(M),
+    group = c(1,1,1,1,2,2,2,2)) #A very simple experiment with 2 groups of 4 samples
+BSraw(exptData=exptData, rowData=gr, colData=groups, totalReads=Cov, methReads=M)
+```
+
 ##Advanced bison_herd usage
 
 `bison_herd` has the ability to use a semi-arbitrary number of nodes. In practice,
@@ -322,6 +345,9 @@ even when limited to the same resources.
      things manually or use external programs for this. It should also be noted
      that any changes to the "track" or other header lines should be made after
      all processing with Bison is complete.
+
+  *  Add conversion scripts for import into MethylSeekR, BiSeq, methyAnalysis,
+     BEAT, and DMAP.
 
 ###0.3.0
   *  Note: The indices produced by previous versions are not guaranteed to be
