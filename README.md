@@ -7,6 +7,8 @@ This program depends upon the following:
 1. A functional MPI implementation, such as mpich
 
 2. The SAMtools library or similar. SAMtools is available here: http://samtools.sourceforge.net/
+   Note, the development version of samtools available on github that uses
+   htslib is currently not compatible.
 
 3. Bowtie2, available here: http://bowtie-bio.sourceforge.net/bowtie2/index.shtml
    The bowtie2 executable MUST be in your PATH.
@@ -182,7 +184,8 @@ resulting .fai file is simply a text file and can be loaded into R with:
 ```R
 fai <- read.delim("genome.fa.fai", header=F)
 chromosome_lengths <- fai$V2
-readMethylome("file.MethylSeekR", chromosome_lengths)
+names(chromosome_lengths) <- fai$V1
+d <- readMethylome("file.MethylSeekR", chromosome_lengths)
 ```
 
 ###`make_reduced_genome`
