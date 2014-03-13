@@ -351,7 +351,6 @@ int main(int argc, char *argv[]) {
             fp = bam_open(iname, "r");
         } else if(oname == NULL) {
             oname = argv[i];
-            of = bam_open(oname, "w");
         } else {
             printf("Unrecognized option: %s\n", argv[i]);
             usage(argv[0]);
@@ -369,7 +368,6 @@ int main(int argc, char *argv[]) {
     read = bam_init1();
     alignments = malloc(sizeof(alignment)*max_length);
     assert(alignments != NULL);
-    if(n_compression_threads > 1) bgzf_mt(of, n_compression_threads, 256);
 
     //Initialize lookup table
     fill_table();
@@ -421,7 +419,7 @@ int main(int argc, char *argv[]) {
     fp = bam_open(iname, "r");
     header = bam_header_read(fp);
     of = bam_open(oname, "w");
-    bgzf_mt(of, 4, 256); //This should be user configurable
+    if(n_compression_threads > 1) bgzf_mt(of, n_compression_threads, 256);
     bam_header_write(of, header);
 
     while(bam_read1(fp, read) > 1) {
