@@ -246,6 +246,8 @@ are on different chromosomes or different strand.\n");
            would be at least as large as the number of reads you have, but the\n\
            array will grow as needed.\n\
 \n\
+    -@ INT Number of compression threads to use when writing the BAM file.\n\
+\n\
     -g INT How much the array should grow (measured in reads/read pairs) when\n\
            it's full). The default is 1000000.\n");
 }
@@ -326,7 +328,7 @@ int main(int argc, char *argv[]) {
     uint64_t grow_size = 1000000;
     alignment *alignments;
     uint32_t *bitmap;
-    int i;
+    int i, n_compression_threads = 1;
     char *iname = NULL, *oname = NULL;
 
     if(argc < 3) {
@@ -342,6 +344,8 @@ int main(int argc, char *argv[]) {
             max_length = (uint64_t) strtoull(argv[++i], NULL, 10);
         } else if(strcmp("-g", argv[i]) == 0) {
             grow_size = (uint64_t) strtoull(argv[++i], NULL, 10);
+        } else if(strcmp("-@", argv[i]) == 0) {
+            n_compression_threads = atoi(argv[++i]);
         } else if(iname == NULL) {
             iname = argv[i];
             fp = bam_open(iname, "r");
@@ -365,6 +369,7 @@ int main(int argc, char *argv[]) {
     read = bam_init1();
     alignments = malloc(sizeof(alignment)*max_length);
     assert(alignments != NULL);
+    if(n_compression_threads > 1) bgzf_mt(of, n_compression_threads, 256);
 
     //Initialize lookup table
     fill_table();
