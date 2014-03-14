@@ -2,10 +2,11 @@
 #include <inttypes.h>
 #include <bam.h>
 
-#define WORD_OFFSET(b) b/32
-#define BIT_OFFSET(b) b%32
-#define GET_STRAND(b) b >> 30
+#define WORD_OFFSET(b) (b)/32
+#define BIT_OFFSET(b) (b)%32
+#define GET_STRAND(b) (b) >> 30
 #define MIN_PHRED 5 //Minimum phred score that a basecall must have to be included in the methylation call bitmap
+#define min(a,b) (a<=b) ? a : b
 
 //Lookup table for popcount, 16 bits so 4 function calls/value
 unsigned bitcounts_table[65536];
@@ -30,7 +31,7 @@ void fill_table() {
 
 typedef struct {
     int32_t tid, start1, start2, total_phred; //First 2 bits of tid denote strand: OT 00, OB 01, CTOT 10, CTOB 11, so ~1 billion contigs
-    uint64_t meth[2], unmeth[2];
+    uint64_t meth[8], unmeth[8];
     uint32_t read_number;
 } alignment;
 
@@ -90,10 +91,22 @@ int comp_func(const void *a, const void *b) {
             if(a1->start2 < a2->start2) return -1; //start2
             else if(a1->start2 > a2->start2) return 1;
             else {
-                ncalls1 = lookup_popcount(a1->meth[0]) + lookup_popcount(a1->meth[1]) + lookup_popcount(a1->unmeth[0]) + lookup_popcount(a1->unmeth[1]);
-                ncalls2 = lookup_popcount(a2->meth[0]) + lookup_popcount(a2->meth[1]) + lookup_popcount(a2->unmeth[0]) + lookup_popcount(a2->unmeth[1]);
-                //ncalls1 = popcount(a1->meth[0])+popcount(a1->meth[1])+popcount(a1->unmeth[0])+popcount(a1->unmeth[1])
-                //ncalls2 = popcount(a2->meth[0])+popcount(a2->meth[1])+popcount(a2->unmeth[0])+popcount(a2->unmeth[1])
+                ncalls1 = lookup_popcount(a1->meth[0]) + lookup_popcount(a1->meth[1]) \
+                    + lookup_popcount(a1->meth[2]) + lookup_popcount(a1->meth[3]) \
+                    + lookup_popcount(a1->meth[4]) + lookup_popcount(a1->meth[5]) \
+                    + lookup_popcount(a1->meth[6]) + lookup_popcount(a1->meth[7]) \
+                    + lookup_popcount(a1->unmeth[0]) + lookup_popcount(a1->unmeth[1]) \
+                    + lookup_popcount(a1->unmeth[3]) + lookup_popcount(a1->unmeth[3]) \
+                    + lookup_popcount(a1->unmeth[4]) + lookup_popcount(a1->unmeth[5]) \
+                    + lookup_popcount(a1->unmeth[6]) + lookup_popcount(a1->unmeth[7]);
+                ncalls2 = lookup_popcount(a2->meth[0]) + lookup_popcount(a2->meth[1]) \
+                    + lookup_popcount(a2->meth[2]) + lookup_popcount(a2->meth[3]) \
+                    + lookup_popcount(a2->meth[4]) + lookup_popcount(a2->meth[5]) \
+                    + lookup_popcount(a2->meth[6]) + lookup_popcount(a2->meth[7]) \
+                    + lookup_popcount(a2->unmeth[0]) + lookup_popcount(a2->unmeth[1]) \
+                    + lookup_popcount(a2->unmeth[3]) + lookup_popcount(a2->unmeth[3]) \
+                    + lookup_popcount(a2->unmeth[4]) + lookup_popcount(a2->unmeth[5]) \
+                    + lookup_popcount(a2->unmeth[6]) + lookup_popcount(a2->unmeth[7]);
                 if(ncalls1 > ncalls2) return -1; //total calls
                 else if(ncalls1 < ncalls2) return 1;
                 else {
@@ -169,18 +182,14 @@ uint64_t get_bin_limits(alignment *alignments, uint64_t total) {
     (4) the popcount of the result is the edit distance
 */
 int edit_distance(alignment *a1, alignment *a2) {
-    int distance = 0;
+    int distance = 0, i;
     uint64_t diff1, diff2;
 
-    //read #1
-    diff1 = a1->meth[0] ^ a2->meth[0];
-    diff2 = a1->unmeth[0] ^ a2->unmeth[0];
-    distance += lookup_popcount(diff1 & diff2);
-
-    //read #2
-    diff1 = a1->meth[1] ^ a2->meth[1];
-    diff2 = a1->unmeth[1] ^ a2->unmeth[1];
-    distance += lookup_popcount(diff1 & diff2);
+    for(i=0; i<8; i++) {
+        diff1 = a1->meth[i] ^ a2->meth[i];
+        diff2 = a1->unmeth[i] ^ a2->unmeth[i];
+        distance += lookup_popcount(diff1 & diff2);
+    }
 
     return distance;
 }
@@ -191,11 +200,11 @@ uint64_t mark_bin(alignment *alignments, uint64_t i, uint64_t bin_width, uint32_
 
     for(j=i; j<i+bin_width-1; j++) { //There's no point in starting on the last one
         //If this read is already a duplicate, then ignore
-        if(get_bit(bitmap, j) == 0) {
+        if(get_bit(bitmap, alignments[j].read_number) == 0) {
             for(k=j+1; k<j+bin_width; k++) {
-                if(get_bit(bitmap, k) == 0) {
-                    if(edit_distance(alignments+j, alignments+k) > 0) {
-                        set_bit(bitmap, k);
+                if(get_bit(bitmap, alignments[k].read_number) == 0) {
+                    if(edit_distance(alignments+j, alignments+k) == 0) {
+                        set_bit(bitmap, alignments[k].read_number);
                         ndups++;
                     }
                 }
@@ -291,29 +300,84 @@ inline int32_t get_tid(bam1_t *read) {
 
     strand = strand << 30;
     assert(read->core.tid < 0x3FFFFFFF);
-    return strand & read->core.tid;
+    return strand | read->core.tid;
 }
 
-//Given an XM string, set two 64bit bit-fields denoting methylated/unmethylated positions
+//Given an XM string, set 4 64bit bit-fields denoting methylated/unmethylated positions
+//This is only sufficient for reads up to 256 bases
 //Only include things if a call has a phred score of at least MIN_PHRED
+//Soft-clipping will offset things
 void calls2uint(bam1_t *read, uint64_t *meth, uint64_t *unmeth) {
-    int32_t i, l = read->core.l_qseq;
+    int32_t i, l = read->core.l_qseq, start, end, offset = get_pos(read)-read->core.pos;
     uint8_t *p = bam_aux_get(read, "XM");
     char *XM = NULL;
     uint8_t *qual = bam1_qual(read);
+    int word_offset = 0;
+
+    if(read->core.flag & BAM_FPAIRED) {
+        word_offset = (read->core.flag & BAM_FREAD1) ? 0 : 4;
+    }
 
     *meth = 0;
     *unmeth = 0;
     if(p != NULL) {
         XM = bam_aux2Z(p);
-        for(i=0; i<l; i++) {
+        //chunk #1
+        start = 0;
+        end = min(l-offset, 64-offset);
+        for(i=start; i<end; i++) {
             switch(*(XM+i)) {
                 case 'Z' : case 'X' : case 'H' :
-                    if(*(qual+i) >= MIN_PHRED) meth[WORD_OFFSET(i)] |= (1 << BIT_OFFSET(i)); //This is just set_bit() with a 64bit map
+                    if(*(qual+i) >= MIN_PHRED) meth[0+word_offset] |= (1 << BIT_OFFSET(i+offset)); //This is just set_bit() with a 64bit map
                     break;
                 case 'z' : case 'x' : case 'h' :
-                    if(*(qual+i) >= MIN_PHRED) unmeth[WORD_OFFSET(i)] |= (1 << BIT_OFFSET(i));
+                    if(*(qual+i) >= MIN_PHRED) unmeth[0+word_offset] |= (1 << BIT_OFFSET(i+offset));
                     break;
+            }
+        }
+        if(l+offset > 64) {
+            //chunk #2
+            start = 64-offset;
+            end = min(l-offset, 128-offset);
+            for(i=start; i<end; i++) {
+                switch(*(XM+i)) {
+                    case 'Z' : case 'X' : case 'H' :
+                        if(*(qual+i) >= MIN_PHRED) meth[1+word_offset] |= (1 << BIT_OFFSET(i+offset)); //This is just set_bit() with a 64bit map
+                        break;
+                    case 'z' : case 'x' : case 'h' :
+                        if(*(qual+i) >= MIN_PHRED) unmeth[1+word_offset] |= (1 << BIT_OFFSET(i+offset));
+                        break;
+                }
+            }
+        }
+        if(l+offset > 128) {
+            //chunk #3
+            start = 128-offset;
+            end = min(l-offset, 192-offset);
+            for(i=start; i<end; i++) {
+                switch(*(XM+i)) {
+                    case 'Z' : case 'X' : case 'H' :
+                        if(*(qual+i) >= MIN_PHRED) meth[2+word_offset] |= (1 << BIT_OFFSET(i+offset)); //This is just set_bit() with a 64bit map
+                        break;
+                    case 'z' : case 'x' : case 'h' :
+                        if(*(qual+i) >= MIN_PHRED) unmeth[2+word_offset] |= (1 << BIT_OFFSET(i+offset));
+                        break;
+                }
+            }
+        }
+        if(l+offset > 192) {
+            //chunk #2
+            start = 192-offset;
+            end = min(l-offset, 256-offset);
+            for(i=start; i<end; i++) {
+                switch(*(XM+i)) {
+                    case 'Z' : case 'X' : case 'H' :
+                        if(*(qual+i) >= MIN_PHRED) meth[3+word_offset] |= (1 << BIT_OFFSET(i+offset)); //This is just set_bit() with a 64bit map
+                        break;
+                    case 'z' : case 'x' : case 'h' :
+                        if(*(qual+i) >= MIN_PHRED) unmeth[3+word_offset] |= (1 << BIT_OFFSET(i+offset));
+                        break;
+                }
             }
         }
     }
@@ -379,16 +443,17 @@ int main(int argc, char *argv[]) {
         alignments[total_pairs].tid = get_tid(read);
         alignments[total_pairs].start1 = get_pos(read);
         alignments[total_pairs].total_phred = total_phred(read);
-        calls2uint(read, &(alignments[total_pairs].meth[0]), &(alignments[total_pairs].unmeth[0]));
+        for(i=0;i<8;i++) { //Ensure that everything starts at 0!
+            alignments[total_pairs].meth[i] = 0;
+            alignments[total_pairs].unmeth[i] = 0;
+        }
+        alignments[total_pairs].start2 = 0;
+        calls2uint(read, alignments[total_pairs].meth, alignments[total_pairs].unmeth);
         if(read->core.flag & BAM_FPAIRED) {
             assert(bam_read1(fp,read)>1);
             alignments[total_pairs].start2 = get_pos(read);
             alignments[total_pairs].total_phred += total_phred(read);
-            calls2uint(read, &(alignments[total_pairs].meth[1]), &(alignments[total_pairs].unmeth[1]));
-        } else {
-            alignments[total_pairs].start2 = 0;
-            alignments[total_pairs].meth[1] = 0;
-            alignments[total_pairs].unmeth[1] = 0;
+            calls2uint(read, alignments[total_pairs].meth, alignments[total_pairs].unmeth);
         }
         alignments[total_pairs].read_number = total_pairs;
         total_pairs++;
