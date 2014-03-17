@@ -22,7 +22,7 @@ of.write("track type=bedGraph\n")
 lines = []
 for f in files :
     line = f.next()
-    if(line.startswith('track')) :
+    if(line[0].startswith('track')) :
         line = f.next()
     lines.append([line[0],int(line[1]), int(line[2]), int(line[4]), int(line[5])])
 
