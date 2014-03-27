@@ -21,7 +21,7 @@
 
 #define MAXREAD 1024
 #define MASTER 0
-#define VERSION "0.3.1"
+#define VERSION "0.3.2"
 #define BT2BUF_SZ 256 * 1024
 #define THROTTLE_CHECK_INTERVAL 100000 //When bison_herd auto-throttles, this specifies how frequently it should check whether it should do so (units are "reads")
 #define version() printf("Bison, version %s\n", VERSION)

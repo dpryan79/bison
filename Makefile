@@ -44,7 +44,7 @@ herd:  $(OBJS) $(HERD_OBJS)
 	$(CC) $(OPTS) $(OBJS) $(HERD_OBJS) herd/main.o -o bison_herd $(LIB_DIRS) -lm -lpthread $(MPI) -lbam -lz
 
 #Auxiliary programs, don't compile by default
-auxiliary:	merge_CpGs bedGraph2methylKit make_reduced_genome aux_python_scripts CpG_coverage
+auxiliary:	merge_CpGs bedGraph2methylKit make_reduced_genome aux_python_scripts CpG_coverage bedGraph2MOABS
 
 aux_python_scripts:
 	cp -f auxiliary/bedGraph2BSseq.py ./
@@ -63,6 +63,10 @@ bedGraph2methylKit:common.o
 	$(CC) -c $(OPTS) $(INCLUDE_DIRS) auxiliary/bedGraph2methylKit.c -o auxiliary/bedGraph2methylKit.o
 	$(CC) $(OPTS) $(LIB_DIRS) common.o auxiliary/bedGraph2methylKit.o -o bedGraph2methylKit
 
+bedGraph2MOABS:	common.o
+	$(CC) -c $(OPTS) $(INCLUDE_DIRS) auxiliary/bedGraph2MOABS.c -o auxiliary/bedGraph2MOABS.o
+	$(CC) $(OPTS) $(LIB_DIRS) common.o auxiliary/bedGraph2MOABS.o -o bedGraph2MOABS
+
 make_reduced_genome:
 	$(CC) $(OPTS) $(LIB_DIRS) auxiliary/make_reduced_genome.c -o make_reduced_genome
 
@@ -72,6 +76,7 @@ install :
 	cp Rscripts/* $(PREFIX)/
 	if [ -f bison ]; then mv bison $(PREFIX)/ ; fi;
 	if [ -f bedGraph2methylKit ]; then mv bedGraph2methylKit $(PREFIX)/ ; fi;
+	if [ -f bedGraph2MOABS ]; then mv bedGraph2MOABS $(PREFIX)/ ; fi;
 	if [ -f bedGraph2BSseq.py ]; then chmod a+x bedGraph2BSseq.py ; mv bedGraph2BSseq.py $(PREFIX)/ ; fi;
 	if [ -f bedGraph2MethylSeekR.py ]; then chmod a+x bedGraph2MethylSeekR.py ; mv bedGraph2MethylSeekR.py $(PREFIX)/ ; fi;
 	if [ -f merge_bedGraphs.py ]; then chmod a+x merge_bedGraphs.py ; mv merge_bedGraphs.py $(PREFIX)/ ; fi;
@@ -79,6 +84,6 @@ install :
 	if [ -f make_reduced_genome ]; then mv make_reduced_genome $(PREFIX)/ ; fi;
 
 clean:
-	rm -f *.o bison bison_* bedGraph2methylKit check_accuracy make_reduced_genome *.py
+	rm -f *.o bison bison_* bedGraph2methylKit bedGraph2MOABS check_accuracy make_reduced_genome *.py
 	rm -f herd/*.o
 	rm -f auxiliary/*.o

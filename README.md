@@ -181,6 +181,12 @@ As above, but each bedGraph file is converted to a .methylKit file. The
 bedGraphs should be of CpGs and not have had the strands merged (i.e., don't run
 the merge_CpGs command below).
 
+###`bedGraph2MOABS`
+Like `bedGraph2methylKit`, but each bedGraph file is converted to a .moabs file.
+The bedGraph files should ideally contain single-C metrics rather than having
+been merged to form CpG metrics, though both are supported. The resulting .moabs
+files can then be used by `mdiff` in the MOABS package.
+
 ###`bedGraph2MethylSeekR`
 As above, but each bedGraph file is converted into a .MethylSeekR file. The
 bedGraphs MUST be merged before-hand with bison_merge_CpGs to create per-CpG
@@ -358,6 +364,11 @@ true for `bison_herd`. Both bison and `bison_herd` seem to be faster than bismar
 even when limited to the same resources.
 
 ##Changes
+
+###0.3.2
+  *  Added bedGraph2MOABS to convert bedGraph files for use by MOABS. See usage
+     above.
+
 ###0.3.1
   *  The various bedGraph files didn't previously have a "track" line. The UCSC
      Genome Browser requires this, so bedGraph files produced will now contain 
