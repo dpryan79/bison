@@ -185,7 +185,7 @@ bedGraph2MOABS
 Like bedGraph2methylKit, but each bedGraph file is converted to a .moabs file.
 The bedGraph files should ideally contain single-C metrics rather than having
 been merged to form CpG metrics, though both are supported. The resulting .moabs
-files can then be used by mdiff in the MOABS package.
+files can then be used by mcomp in the MOABS package.
 
 bedGraph2MethylSeekR
 As above, but each bedGraph file is converted into a .MethylSeekR file. The
