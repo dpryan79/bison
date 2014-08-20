@@ -375,6 +375,8 @@ even when limited to the same resources.
   *  Fixed a small bug wherein --reorder wasn't being invoked when multiple
      output BAM files were to be used.
 
+  *  Fixed a small bug that only manifested in DEBUG mode.
+
 ###0.3.1
   *  The various bedGraph files didn't previously have a "track" line. The UCSC
      Genome Browser requires this, so bedGraph files produced will now contain 
