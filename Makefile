@@ -1,9 +1,10 @@
+#Please see the README file or Tutorial for help in setting these options.
 WORK=/home/ryand#This should be changed to match your needs
 PREFIX = $(WORK)/bin
 CC = mpicc
-HTSLIB=#Only define this (to anything) if you want to compile against HTS lib rather than samtools 0.1.19 or earlier
-INCLUDE_DIRS = -I$(WORK)/Downloads/samtools-0.1.19 #This should be were samtools was compiled -I/path/to/samtools/compilation
-LIB_DIRS = -L$(WORK)/Downloads/samtools-0.1.19 #As above, but -L/path/to/samtools/compilation
+HTSLIB=true
+INCLUDE_DIRS = -I$(WORK)/include
+LIB_DIRS = -L$(WORK)/libs
 OPTS := -Wall -O3 #-g -DDEBUG -DNOTHROTTLE
 #MPI = -lmpich -lmpl #This is usually appropriate for mpich2
 MPI = #This is appropriate for mvapich2

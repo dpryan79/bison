@@ -28,7 +28,9 @@ to bismark's changing of chromosome/contig names.\n\
 \n\
 Options are currently identical to those for bowtie2-build\n\
 (http://bowtie-bio.sourceforge.net/bowtie2/manual.shtml#the-bowtie2-build-indexer),\n\
-as this program is effectively just a wrapper.\n");
+as this program is effectively just a wrapper.\n\
+\n\
+Note that bowtie2-build's -c option isn't supported.\n");
 }
 
 void * bt2_build(void *a) {
@@ -102,6 +104,10 @@ int main(int argc, char *argv[]) {
     //Store bowtie2-build options
     options = (char *) calloc(1, sizeof(char));
     for(i=1; i<argc-1; i++) {
+        if(strcmp(argv[i], "-c")) {
+            printf("The -c option isn't supported!\n");
+            return 1;
+        }
         options = realloc(options, sizeof(char) * (strlen(options) + strlen(argv[i]) + 2));
         sprintf(options, "%s %s", options, argv[i]);
     }
