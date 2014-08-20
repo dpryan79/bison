@@ -67,7 +67,9 @@ void usage(char *prog) {
 \n \
 --reorder   Reorder output to match the same order as the input. This will make\n \
             things slower, but enable easier comparisons. This is passed to\n \
-            bowtie2 regardless of whether you specify it or not.\n \
+            bowtie2 regardless of whether you specify it or not. If you use\n \
+            multiple input files then this option will always be used, even if\n \
+            unspecified.\n \
 \n \
 -@          Number of BAM compression threads to use. This is equivalent to -@\n \
             in samtools. The default is 1, but this may need to be increased as\n \
@@ -317,6 +319,7 @@ int main(int argc, char *argv[]) {
     }
     free(tmp);
     wordfree(&p_wordexp);
+    if(multi_file>1) config.reorder=1; //We need to force --reorder if there are multiple input files
 #ifdef DEBUG
     if(multi_file>1) {
         printf("In DEBUG mode, you can't input multiple file-sets!\n");
