@@ -45,6 +45,7 @@
 *
 ******************************************/
 #ifdef HTSLIB
+#define KS_BGZF 1
 #define bam_header_t bam_hdr_t
 #define bam_header_init bam_hdr_init
 #define bam_header_write bam_hdr_write
