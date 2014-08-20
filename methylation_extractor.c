@@ -945,7 +945,7 @@ int main(int argc, char *argv[]) {
 #ifndef HTSLIB
             samread(fp, read2);
 #else
-            sam_read1(fp, global_header, read1);
+            sam_read1(fp, global_header, read2);
 #endif
             r1_pos = read1->core.pos+1;
             r2_pos = read2->core.pos+1;
