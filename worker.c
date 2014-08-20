@@ -16,7 +16,11 @@ void worker_node(int thread_id) {
     bam_header_t *header;
     bam1_t *read1 = bam_init1();
     bam1_t *read2 = bam_init1();
+#ifndef HTSLIB
     tamFile fp;
+#else
+    samFile *fp;
+#endif
     MPI_Status stat;
 #ifdef DEBUG
     int current_p_size = 100;

@@ -7,11 +7,23 @@
 #include <dirent.h>
 #include <pthread.h>
 #include <ctype.h>
+
+#ifdef HTSLIB
+#include <zlib.h>
+#include "htslib/kseq.h"
+#include "htslib/kstring.h"
+#include "htslib/sam.h"
+#include "htslib/hfile.h"
+#include "htslib/bgzf.h"
+#else
 #include <kstring.h>
 #include <bam.h>
 #include <sam_header.h>
 #include <kseq.h>
 #include <khash.h>
+#endif
+
+#include <limits.h>
 #include <inttypes.h>
 #include <time.h>
 #include <assert.h>
@@ -25,6 +37,31 @@
 #define BT2BUF_SZ 256 * 1024
 #define THROTTLE_CHECK_INTERVAL 100000 //When bison_herd auto-throttles, this specifies how frequently it should check whether it should do so (units are "reads")
 #define version() printf("Bison, version %s\n", VERSION)
+
+/******************************************
+*
+* Take care of differences between the HTSlib API and that from the original
+* samtools API.
+*
+******************************************/
+#ifdef HTSLIB
+#define bam_header_t bam_hdr_t
+#define bam_header_init bam_hdr_init
+#define bam_header_write bam_hdr_write
+#define bam_header_read bam_hdr_read
+#define bam_header_destroy bam_hdr_destroy
+#define bam_close(fp) bgzf_close(fp)
+#define bam_open(fn, mode) bgzf_open(fn, mode)
+#define bam1_seq bam_get_seq
+#define bam1_seqi bam_seqi
+#define bam1_qual bam_get_qual
+#define bam1_qname bam_get_qname
+#define bam1_cigar bam_get_cigar
+#define sam_header_read sam_hdr_read
+typedef BGZF * bamFile;
+//This is no longer defined
+static inline uint32_t bam_calend(const bam1_core_t *c, const uint32_t *cigar) { return c->pos + (c->n_cigar? bam_cigar2rlen(c->n_cigar, cigar) : 1); }
+#endif
 
 /******************************************
 *
@@ -653,7 +690,11 @@ void herd_worker_node(int, char *, char *); //worker.c under herd/
 *   char *cmd: The command given to popen, the mode is always "r".
 *
 *******************************************************************************/
+#ifndef HTSLIB
 tamFile sam_popen(char *); //aux.c
+#else
+samFile * sam_popen(char *); //aux.c
+#endif
 
 /******************************************************************************
 *
@@ -662,4 +703,8 @@ tamFile sam_popen(char *); //aux.c
 *   tamFile fp: The file pointer struct returned from sam_popen
 *
 *******************************************************************************/
+#ifndef HTSLIB
 void sam_pclose(tamFile fp); //aux.c
+#else
+void sam_pclose(samFile *fp);
+#endif

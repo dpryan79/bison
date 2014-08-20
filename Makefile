@@ -1,14 +1,23 @@
 WORK=/home/ryand#This should be changed to match your needs
 PREFIX = $(WORK)/bin
 CC = mpicc
+HTSLIB=#Only define this (to anything) if you want to compile against HTS lib rather than samtools 0.1.19 or earlier
 INCLUDE_DIRS = -I$(WORK)/Downloads/samtools-0.1.19 #This should be were samtools was compiled -I/path/to/samtools/compilation
 LIB_DIRS = -L$(WORK)/Downloads/samtools-0.1.19 #As above, but -L/path/to/samtools/compilation
-OPTS = -Wall -O3 -g #-DDEBUG #-DNOTHROTTLE -g
+OPTS := -Wall -O3 #-g -DDEBUG -DNOTHROTTLE
 #MPI = -lmpich -lmpl #This is usually appropriate for mpich2
 MPI = #This is appropriate for mvapich2
 #MPI = -lmpi #This is usually appropriate for openmpi
 
 #Don't edit below here unless you know what you're doing!
+
+#change linking if we're dealing with HTSlib
+ifdef HTSLIB
+	OPTS := $(OPTS) -DHTSLIB
+	LIBBAM = -lhts
+else
+	LIBBAM = -lbam
+endif
 
 OBJS = aux.o fastq.o genome.o slurp.o master.o common.o MPI_packing.o worker.o
 HERD_OBJS = herd/fastq.o herd/master.o herd/MPI_packing.o herd/slurp.o herd/worker.o herd/writer.o
@@ -21,27 +30,27 @@ all: align index extractor mbias markduplicates
 	$(CC) -c $(OPTS) $(INCLUDE_DIRS) $< -o $@
 
 markduplicates:
-	$(CC) $(OPTS) $(INCLUDE_DIRS) $(LIB_DIRS) -o bison_markduplicates markduplicates.c -lpthread -lbam -lz
+	$(CC) $(OPTS) $(INCLUDE_DIRS) $(LIB_DIRS) -o bison_markduplicates markduplicates.c -lpthread $(LIBBAM) -lz
 
 mbias:
-	$(CC) $(OPTS) $(INCLUDE_DIRS) $(LIB_DIRS) -o bison_mbias mbias.c -lpthread -lbam -lz
+	$(CC) $(OPTS) $(INCLUDE_DIRS) $(LIB_DIRS) -o bison_mbias mbias.c -lpthread $(LIBBAM) -lz
 
 index:
 	$(CC) $(OPTS) -o bison_index index.c -lpthread
 
 align: $(OBJS)
 	$(CC) -c $(OPTS) $(INCLUDE_DIRS) main.c -o main.o
-	$(CC) $(OPTS) $(OBJS) main.o -o bison $(LIB_DIRS) -lm -lpthread $(MPI) -lbam -lz
+	$(CC) $(OPTS) $(OBJS) $(LIB_DIRS) main.o -o bison -lm -lpthread $(MPI) -lz $(LIBBAM)
 
 extractor:
 	$(CC) -c $(OPTS) $(INCLUDE_DIRS) common.c -o common.o
 	$(CC) -c $(OPTS) $(INCLUDE_DIRS) methylation_extractor.c -o methylation_extractor.o
-	$(CC) $(OPTS) $(LIB_DIRS) common.o methylation_extractor.o -o bison_methylation_extractor -lpthread -lbam -lz
+	$(CC) $(OPTS) $(LIB_DIRS) common.o methylation_extractor.o -o bison_methylation_extractor -lpthread $(LIBBAM) -lz
 
 #Don't compile herd by default
 herd:  $(OBJS) $(HERD_OBJS)
 	$(CC) -c $(OPTS) $(INCLUDE_DIRS) herd/main.c -o herd/main.o
-	$(CC) $(OPTS) $(OBJS) $(HERD_OBJS) herd/main.o -o bison_herd $(LIB_DIRS) -lm -lpthread $(MPI) -lbam -lz
+	$(CC) $(OPTS) $(OBJS) $(HERD_OBJS) herd/main.o -o bison_herd $(LIB_DIRS) -lm -lpthread $(MPI) $(LIBBAM) -lz
 
 #Auxiliary programs, don't compile by default
 auxiliary:	merge_CpGs bedGraph2methylKit make_reduced_genome aux_python_scripts CpG_coverage bedGraph2MOABS

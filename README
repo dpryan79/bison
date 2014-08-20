@@ -373,6 +373,12 @@ Changes:
   *  Added bedGraph2MOABS to convert bedGraph files for use by MOABS. See usage
      above.
 
+  *  Added support for HTS-lib (you'll need to add -DHTSLIB to the OPTS line of
+     the Makefile).
+
+  *  Fixed a small bug wherein --reorder wasn't being invoked when multiple
+     output BAM files were to be used.
+
 0.3.1
   *  The various bedGraph files didn't previously have a "track" line. The UCSC
      Genome Browser requires this, so bedGraph files produced will now contain

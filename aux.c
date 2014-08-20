@@ -1,9 +1,12 @@
 #include "bison.h"
 
 KSTREAM_INIT(gzFile, gzread, 16384)
+#ifndef HTSLIB
 KHASH_MAP_INIT_STR(ref, uint64_t)
+#endif
 FILE *popen_fd;
 
+#ifndef HTSLIB
 struct __tamFile_t {
         gzFile fp;
         kstream_t *ks;
@@ -11,6 +14,7 @@ struct __tamFile_t {
         uint64_t n_lines;
         int is_first;
 };
+#endif
 
 /******************************************************************************
 *
@@ -171,6 +175,7 @@ void print_metrics() {
     free(of);
 }
 
+#ifndef HTSLIB
 tamFile sam_popen(char *cmd) {
     tamFile fp = calloc(1, sizeof(struct __tamFile_t));
     gzFile gzfp;
@@ -199,3 +204,36 @@ void sam_pclose(tamFile fp) {
         free(fp);
     }
 }
+#else
+htsFile * sam_popen(char *cmd) {
+    htsFile *fp = (htsFile*)calloc(1, sizeof(htsFile));
+    int fid, fid2;
+    popen_fd = popen(cmd, "r"); //Global
+
+    fid = fileno(popen_fd);
+    fid2 = dup(fid); //otherwise, the file descriptor is closed by zlib and pclose() won't work!!
+    if(popen_fd == NULL) return 0;
+    if(fp == NULL) return 0;
+
+    hFILE *hfile = hdopen(fid2, "r"); //does this exist?
+    if(hfile == NULL) return 0;
+
+    fp->is_be = ed_is_big();
+    fp->is_kstream = 1;
+    //This assumes KS_BGZF is set!!!
+    #if KS_BGZF
+        BGZF *gzfp = bgzf_hopen(hfile, mode);
+    #else
+        // TODO Implement gzip hFILE adaptor
+        gzFile gzfp = gzdopen(fid2, "rb");
+    #endif
+    fp->fp.voidp = ks_init(gzfp);
+
+    return(fp);
+}
+
+void sam_pclose(htsFile *fp) {
+    hts_close(fp);
+    pclose(popen_fd);
+}
+#endif

@@ -1,5 +1,9 @@
 #include "bison.h"
+#ifndef HTSLIB
 #include "sam.h"
+#else
+#define samfile_t samFile
+#endif
 
 //Eh, this is simple enough for a small program
 int storeCpG, storeCHG, storeCHH, min_Phred;
@@ -895,12 +899,17 @@ int main(int argc, char *argv[]) {
             i++;
             chromosomes.max_genome = strtoull(argv[i], NULL, 10);
         } else if(fp == NULL) {
+#ifndef HTSLIB
             if(argv[i][strlen(argv[i])-3] == 'b') {
                 fp = samopen(argv[i], "rb", NULL);
             } else {
                 fp = samopen(argv[i], "r", NULL);
             }
             global_header = fp->header;
+#else
+            fp = sam_open(argv[i], "r");
+            global_header = sam_hdr_read(fp);
+#endif
         } else {
             printf("Unknown parameter %s\n", argv[i]);
             usage(argv[0]);
@@ -927,9 +936,17 @@ int main(int argc, char *argv[]) {
     read_genome();
 
     //Process the reads
+#ifndef HTSLIB
     while(samread(fp, read1) > 1) {
+#else
+    while(sam_read1(fp, global_header, read1) > 1) {
+#endif
         if(read1->core.flag & BAM_FPAIRED) {
+#ifndef HTSLIB
             samread(fp, read2);
+#else
+            sam_read1(fp, global_header, read1);
+#endif
             r1_pos = read1->core.pos+1;
             r2_pos = read2->core.pos+1;
         } else {
@@ -972,7 +989,12 @@ int main(int argc, char *argv[]) {
             fflush(stdout);
         }
     }
+
+#ifndef HTSLIB
     if(samread(fp, read1) > 1) {
+#else
+    if(sam_read1(fp, global_header, read1) > 1) {
+#endif
         printf("We must have exited on an error as there are still reads left\n");
         fflush(stdout);
     }
@@ -1014,7 +1036,12 @@ int main(int argc, char *argv[]) {
     destroy_sites(sites);
     bam_destroy1(read1);
     bam_destroy1(read2);
+#ifndef HTSLIB
     samclose(fp);
+#else
+    sam_close(fp);
+    free(global_header);
+#endif
 
     return 0;
 };

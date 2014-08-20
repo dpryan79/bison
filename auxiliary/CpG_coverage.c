@@ -1,5 +1,4 @@
 #include "../bison.h"
-#include "sam.h"
 
 //This will hold the coverage. The last bin is actually for everything >250
 unsigned long long coverage[252];

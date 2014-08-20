@@ -1,5 +1,4 @@
 #include "../bison.h"
-#include "sam.h"
 
 struct CpG {
     int tid;

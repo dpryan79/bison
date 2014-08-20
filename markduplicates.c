@@ -1,6 +1,13 @@
+#include "bison.h"
+/*
 #include <assert.h>
 #include <inttypes.h>
+#ifndef HTSLIB
 #include <bam.h>
+#else
+#include "htslib/sam.h"
+#endif
+*/
 
 #define WORD_OFFSET(b) (b)/32
 #define BIT_OFFSET(b) (b)%32

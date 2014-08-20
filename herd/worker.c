@@ -238,7 +238,11 @@ void herd_worker_node(int thread_id, char *fastq1, char *fastq2) {
     bam_header_t *header;
     bam1_t *read1 = bam_init1();
     bam1_t *read2 = bam_init1();
+#ifndef HTSLIB
     tamFile fp;
+#else
+    samFile *fp;
+#endif
 #ifdef DEBUG
     MPI_Status stat;
     int current_p_size = 100;

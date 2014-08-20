@@ -162,9 +162,13 @@ bam1_t *unpack_read(bam1_t *read, void *packed) {
     if(read != NULL) bam_destroy1(read);
     read = bam_init1();
     read->core = pbam1_t->core;
+#ifdef HTSLIB
+    read->l_data= pbam1_t->l_data;
+#else
     read->l_aux = pbam1_t->l_aux;
-    read->m_data = pbam1_t->m_data;
     read->data_len= pbam1_t->data_len;
+#endif
+    read->m_data = pbam1_t->m_data;
     newdata = (uint8_t *) malloc(read->m_data);
     memcpy((void *) newdata, (void *) pdata, read->m_data);
     read->data = newdata;

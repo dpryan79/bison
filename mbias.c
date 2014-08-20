@@ -128,7 +128,17 @@ int main(int argc, char *argv[]) {
         }
         reversed = (read->core.flag & BAM_FREVERSE) ? 1 : 0;
 
-        if(bam_aux_get(read, "XR") == NULL || bam_aux_get(read, "XG") == NULL) printf("%s\n", bam_format1(header, read));
+        if(bam_aux_get(read, "XR") == NULL || bam_aux_get(read, "XG") == NULL) { 
+#ifndef HTSLIB
+            printf("%s\n", bam_format1(header, read));
+#else
+            kstring_t str;
+            str.l = str.m = 0; str.s = NULL;
+            sam_format1(header, read, &str);
+            printf("%s\n", str.s);
+            free(str.s);
+#endif
+        }
         XR = bam_aux2Z(bam_aux_get(read, "XR"));
         XG = bam_aux2Z(bam_aux_get(read, "XG"));
         if(!(read->core.flag & BAM_FREAD2)) {
