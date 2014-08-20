@@ -141,7 +141,11 @@ void worker_node(int thread_id) {
 
     t0 = time(NULL);
     if(!config.quiet) printf("Node %i began sending reads @%s", thread_id, ctime(&t0)); fflush(stdout);
+#ifdef HTSLIB
+    while(sam_read1(fp, header, read1) == 0) {
+#else
     while(sam_read1(fp, header, read1) > 1) {
+#endif
 #ifdef DEBUG
         bam_write1(of, read1);
 #endif
@@ -168,7 +172,7 @@ void worker_node(int thread_id) {
 #else
         if(packed_read->size > current_p_size) p = realloc(p, packed_read->size);
         MPI_Isend(packed_read->packed, packed_read->size, MPI_BYTE, NODE_ID, 5, MPI_COMM_WORLD, &request);
-        status = MPI_Recv(p, packed_header->size, MPI_BYTE, NODE_ID, 5, MPI_COMM_WORLD, &stat);
+        status = MPI_Recv(p, packed_read->size, MPI_BYTE, NODE_ID, 5, MPI_COMM_WORLD, &stat);
         MPI_Wait(&request, &stat);
 #endif
         //Deal with paired-end reads
@@ -181,7 +185,7 @@ void worker_node(int thread_id) {
             bam_write1(of, read2);
             if(packed_read->size > current_p_size) p = realloc(p, packed_read->size);
             MPI_Isend((void *) packed_read->packed, packed_read->size, MPI_BYTE, NODE_ID, 5, MPI_COMM_WORLD, &request);
-            status = MPI_Recv(p, packed_header->size, MPI_BYTE, NODE_ID, 5, MPI_COMM_WORLD, &stat);
+            status = MPI_Recv(p, packed_read->size, MPI_BYTE, NODE_ID, 5, MPI_COMM_WORLD, &stat);
             MPI_Wait(&request, &stat);
             debug_read = unpack_read(debug_read, p);
 #endif

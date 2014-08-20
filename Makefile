@@ -5,10 +5,10 @@ CC = mpicc
 HTSLIB=true
 INCLUDE_DIRS = -I$(WORK)/include
 LIB_DIRS = -L$(WORK)/libs
-OPTS := -Wall -O3 -g #-g -DDEBUG -DNOTHROTTLE
+OPTS := -Wall -O3 -g -DDEBUG #-g -DDEBUG -DNOTHROTTLE
 #MPI = -lmpich -lmpl #This is usually appropriate for mpich2
-MPI = #This is appropriate for mvapich2
-#MPI = -lmpi #This is usually appropriate for openmpi
+#MPI = #This is appropriate for mvapich2
+MPI = -lmpi #This is usually appropriate for openmpi
 
 #Don't edit below here unless you know what you're doing!
 

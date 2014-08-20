@@ -220,12 +220,8 @@ htsFile * sam_popen(char *cmd) {
 
     fp->is_be = ed_is_big();
     fp->is_kstream = 1;
-    //This assumes KS_BGZF is set!!!
-    #if KS_BGZF
-        BGZF *gzfp = bgzf_hopen(hfile, "r");
-    #else
-        gzFile gzfp = gzdopen(fid2, "rb");
-    #endif
+    //KS_BGZF is manually set in bison.h
+    BGZF *gzfp = bgzf_hopen(hfile, "r");
     fp->fp.voidp = ks_init(gzfp);
 
     return(fp);
