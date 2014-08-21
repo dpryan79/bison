@@ -377,6 +377,9 @@ even when limited to the same resources.
 
   *  There is now a tutorial. See the TUTORIAL file for download instructions.
 
+  *  The default minimum MAPQ and Phred scores used by bison_mbias have been
+     updated to match bison_methylation_extractor.
+
 ###0.3.1
   *  The various bedGraph files didn't previously have a "track" line. The UCSC
      Genome Browser requires this, so bedGraph files produced will now contain 
