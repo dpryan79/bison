@@ -347,7 +347,11 @@ void herd_worker_node(int thread_id, char *fastq1, char *fastq2) {
 
     t0 = time(NULL);
     if(!config.quiet) printf("Node %i began sending reads @%s", thread_id, ctime(&t0)); fflush(stdout);
+#ifndef HTSLIB
     while(sam_read1(fp, header, read1) > 1) {
+#else
+    while(sam_read1(fp, header, read1) >= 0) {
+#endif
 #ifdef DEBUG
         bam_write1(of, read1);
 #endif

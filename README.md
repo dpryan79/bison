@@ -7,8 +7,6 @@ This program depends upon the following:
 1. A functional MPI implementation, such as mpich
 
 2. The SAMtools library or similar. SAMtools is available here: http://samtools.sourceforge.net/
-   Note, the development version of samtools available on github that uses
-   htslib is currently not compatible.
 
 3. Bowtie2, available here: http://bowtie-bio.sourceforge.net/bowtie2/index.shtml
    The bowtie2 executable MUST be in your PATH.
@@ -376,6 +374,8 @@ even when limited to the same resources.
      output BAM files were to be used.
 
   *  Fixed a small bug that only manifested in DEBUG mode.
+
+  *  There is now a tutorial. See the TUTORIAL file for download instructions.
 
 ###0.3.1
   *  The various bedGraph files didn't previously have a "track" line. The UCSC
