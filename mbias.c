@@ -5,7 +5,7 @@ unsigned long long *r1_m[4];
 unsigned long long *r1_um[4];
 unsigned long long *r2_m[4];
 unsigned long long *r2_um[4];
-int min_phred = 10;
+int min_phred = 5;
 
 void store_calls(unsigned long long *m, unsigned long long *um, bam1_t *read, int reversed) {
     char *meth = bam_aux2Z(bam_aux_get(read, "XM"));
@@ -35,9 +35,9 @@ void usage(char *prog) {
     plot_mbias.R script\n\
 \n\
     -phred Minimum Phred score that a base must have for inclusion in the\n\
-           metrics (default 10).\n\
+           metrics (default 5).\n\
 \n\
-    -q     Read MAPQ value must at least this for inclusion (default 20).\n\
+    -q     Read MAPQ value must at least this for inclusion (default 10).\n\
            Specify 0 to include everything.\n\
 \n\
     -pdf   Run the R script to convert the output to pdf format, including\n\
@@ -53,7 +53,7 @@ int main(int argc, char *argv[]) {
     bam_header_t *header = NULL;
     int max_length = 50;
     int paired = 0, reversed = 0, hasComp = 0;
-    int i, j, min_mapq = 20, pdf = 0;
+    int i, j, min_mapq = 10, pdf = 0;
     unsigned long long treads = 0;
 
     if(argc < 2) {
