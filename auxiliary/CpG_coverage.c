@@ -18,6 +18,8 @@ void next_line(FILE *fp, char *buffer) {
         strtok(NULL, "\t");
         cur_line.coverage = strtoul(strtok(NULL, "\t"), NULL, 10);
         cur_line.coverage += strtoul(strtok(NULL, "\n"), NULL, 10);
+    } else {
+        cur_line.position = ULLONG_MAX;
     }
 }
 
@@ -117,7 +119,10 @@ int main(int argc, char *argv[]) {
         while(j < chromosomes.chromosome[i]->length - 1) {
             if(*(chromosomes.genome+j) == 'C' && *(chromosomes.genome+j+1) == 'G') {
                 nCpGs++;
-                while(strcmp(cur_line.chrom, GenomeChrom) == 0 && k > cur_line.position) next_line(fp, line); //We should never go beyond 1 line...
+                while(strcmp(cur_line.chrom, GenomeChrom) == 0 && k > cur_line.position) {
+                    next_line(fp, line); //We should never go beyond 1 line...
+                    if(cur_line.position == ULLONG_MAX) break; //Have we hit the end of the bedGraph file?
+                }
                 if(strcmp(cur_line.chrom, GenomeChrom) == 0 && (k == cur_line.position || k == cur_line.position-1)) {
                     temp_coverage = cur_line.coverage;
                     if(cur_line.end-cur_line.position == 1) { //Single-C resolution rather than merged as CpGs
