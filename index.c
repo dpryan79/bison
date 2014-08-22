@@ -104,7 +104,7 @@ int main(int argc, char *argv[]) {
     //Store bowtie2-build options
     options = (char *) calloc(1, sizeof(char));
     for(i=1; i<argc-1; i++) {
-        if(strcmp(argv[i], "-c")) {
+        if(strcmp(argv[i], "-c") == 0) {
             printf("The -c option isn't supported!\n");
             return 1;
         }
