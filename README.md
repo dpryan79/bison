@@ -1,89 +1,6 @@
 #Bison: bisulfite alignment on nodes of a cluster.
 
-##Prerequisites
-
-This program depends upon the following:
-
-1. A functional MPI implementation, such as mpich
-
-2. The SAMtools library or similar. SAMtools is available here: http://samtools.sourceforge.net/
-
-3. Bowtie2, available here: http://bowtie-bio.sourceforge.net/bowtie2/index.shtml
-   The bowtie2 executable MUST be in your PATH.
-
-4. zcat, gzip, and bzcat must also be in your PATH, though this will almost
-   always be the case.
-
-5. To use bison_mbias2pdf (or the -pdf option of bison_mbias), R must be
-   installed and in your PATH. Additionally, the ggplot2 library must be
-   installed.
-
-N.B., the actual SAMtools library and header files are required for the
-   compilation step and can then be removed. The actual samtools executable
-   isn't required.
-
-##General setup should go as follows:
-
-0. Download and extract the source code for samtools. Change into the directory
-   containing said code and type "make".
-
-1. Download the source distribution.
-
-2. Unpack, for example: tar zxf bison-0.1.0.tgz
-
-3. Possibly edit the Makefile, to include MPI and SAMtools library and header
-   locations. If these are installed in standard locations, the defaults
-   should suffice. For samtools see example in the Makefile. The default
-   Makefile is suitable for mpich2. If you're using openmpi you'll need to
-   comment out the first MPI line and uncomment the second MPI line.
-
-4. type "make"
-
-   * If you would like to use `bison_herd`, type "make herd".
-
-   * If you would like the auxiliary tools installed, type "make auxiliary".
-
-5. type "make install"
-
-The install path can be changed easily in the Makefile.
-
-##Detailed installation instructions
-
-1. Download samtools (at least version 0.1.19!).
-
-2. Extract the compressed bzipped tar-ball:
-tar jxf samtools-0.1.19.tar.bz2
-
-3. Change to that directory and type:
-make
-
-4. Similarly download and extract the source code for bison
-
-5. Change the installation target. For example, if you would like bison to be
-   installed under "bin" in your home directory, then the PREFIX line should be:
-PREFIX = ~/bin
-
-6. The default compiler is mpicc, but this can be changed by altering the line
-   beginning with "CC".
-
-7. If you extracted and built samtools in your home directory, then you will
-   likely need to change the `INCLUDE_DIRS` and `LIB_DIRS` to something like:
-
-    INCLUDE_DIRS = -I/home/username/samtools-0.1.19
-    LIB_DIRS = -L/home/username/samtools-0.1.19
-
-   If you already have the headers and libbam.a file elsewhere, then change
-   these lines appropriately.
-
-   Likewise, add the location of your MPI headers and libraries, if they're not
-   in the normal search path.
-
-8. You can disable throttling in `bison_herd` by adding "-DNOTHROTTLE" in the
-   "OPTS" line, though read the "Throttling" section , below. Similarly, both
-   bison and `bison_herd` can be compiled in a special debug mode by adding
-   "-DDEBUG" to the "OPTS" line. See the "Debug mode" section, below.
-
-9. Continue with step #4 in the preceding section.
+**N.B.: There is now a tutorial available [here](http://sourceforge.net/projects/dna-bison/files/bison_tutorial.tar.gz/download). This tutorial largely replaces this README file and users are encouraged to read it.**
 
 ##Usage
 
@@ -375,7 +292,7 @@ even when limited to the same resources.
 
   *  Fixed a small bug that only manifested in DEBUG mode.
 
-  *  There is now a tutorial. See the TUTORIAL file for download instructions.
+  *  There is now a [tutorial](http://sourceforge.net/projects/dna-bison/files/bison_tutorial.tar.gz/download).
 
   *  The default minimum MAPQ and Phred scores used by bison_mbias have been
      updated to match bison_methylation_extractor.
