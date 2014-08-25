@@ -284,8 +284,7 @@ even when limited to the same resources.
   *  Added bedGraph2MOABS to convert bedGraph files for use by MOABS. See usage
      above.
 
-  *  Added support for HTS-lib (you'll need to add -DHTSLIB to the OPTS line of
-     the Makefile).
+  *  Added support for HTSlib.
 
   *  Fixed a small bug wherein --reorder wasn't being invoked when multiple
      output BAM files were to be used.
@@ -294,8 +293,8 @@ even when limited to the same resources.
 
   *  There is now a [tutorial](http://sourceforge.net/projects/dna-bison/files/bison_tutorial.tar.gz/download).
 
-  *  The default minimum MAPQ and Phred scores used by bison_mbias have been
-     updated to match bison_methylation_extractor.
+  *  The default minimum MAPQ and Phred scores used by `bison_mbias` have been
+     updated to match `bison_methylation_extractor`.
 
 ###0.3.1
   *  The various bedGraph files didn't previously have a "track" line. The UCSC

@@ -1,11 +1,11 @@
-#Please see the README file or Tutorial for help in setting these options.
+#Please see the tutorial (http://sourceforge.net/projects/dna-bison/files/bison_tutorial.tar.gz/download) for help in setting these options.
 WORK=/home/ryand#This should be changed to match your needs
 PREFIX = $(WORK)/bin
 CC = mpicc
 HTSLIB=true
 INCLUDE_DIRS = -I$(WORK)/include
 LIB_DIRS = -L$(WORK)/libs
-OPTS := -Wall -O3 -g #-g -DDEBUG -DNOTHROTTLE
+OPTS := -Wall -O3 #-g -DDEBUG -DNOTHROTTLE
 #MPI = -lmpich -lmpl #This is usually appropriate for mpich2
 #MPI = #This is appropriate for mvapich2
 MPI = -lmpi #This is usually appropriate for openmpi
