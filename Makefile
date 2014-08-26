@@ -2,9 +2,9 @@
 WORK=/home/ryand#This should be changed to match your needs
 PREFIX = $(WORK)/bin
 CC = mpicc
-HTSLIB=true
+HTSLIB=/home/ryand/lib/libhts.a
 INCLUDE_DIRS = -I$(WORK)/include
-LIB_DIRS = -L$(WORK)/libs
+LIB_DIRS = -L$(WORK)/lib
 OPTS := -Wall -O3 #-g -DDEBUG -DNOTHROTTLE
 #MPI = -lmpich -lmpl #This is usually appropriate for mpich2
 #MPI = #This is appropriate for mvapich2
@@ -15,7 +15,8 @@ MPI = -lmpi #This is usually appropriate for openmpi
 #change linking if we're dealing with HTSlib
 ifdef HTSLIB
 	OPTS := $(OPTS) -DHTSLIB
-	LIBBAM = -lhts
+	LIBBAM = $(HTSLIB)
+	#LIBBAM = -lhts
 else
 	LIBBAM = -lbam
 endif
@@ -30,52 +31,44 @@ all: align index extractor mbias markduplicates
 .c.o:
 	$(CC) -c $(OPTS) $(INCLUDE_DIRS) $< -o $@
 
-markduplicates:
-	$(CC) $(OPTS) $(INCLUDE_DIRS) $(LIB_DIRS) -o bison_markduplicates markduplicates.c -lpthread $(LIBBAM) -lz
+markduplicates: markduplicates.o
+	$(CC) $(LIB_DIRS) -o bison_markduplicates markduplicates.o $(LIBBAM) -lpthread -lz
 
-mbias:
-	$(CC) $(OPTS) $(INCLUDE_DIRS) $(LIB_DIRS) -o bison_mbias mbias.c -lpthread $(LIBBAM) -lz
+mbias: mbias.o
+	$(CC) $(LIB_DIRS) -o bison_mbias mbias.o $(LIBBAM) -lpthread -lz
 
 index:
 	$(CC) $(OPTS) -o bison_index index.c -lpthread
 
-align: $(OBJS)
-	$(CC) -c $(OPTS) $(INCLUDE_DIRS) main.c -o main.o
-	$(CC) $(OPTS) $(OBJS) $(LIB_DIRS) main.o -o bison -lm -lpthread $(MPI) -lz $(LIBBAM)
+align: $(OBJS) main.o
+	$(CC) $(LIB_DIRS) -o bison main.o $(OBJS) $(LIBBAM) -lm -lpthread $(MPI) -lz
 
-extractor:
-	$(CC) -c $(OPTS) $(INCLUDE_DIRS) common.c -o common.o
-	$(CC) -c $(OPTS) $(INCLUDE_DIRS) methylation_extractor.c -o methylation_extractor.o
-	$(CC) $(OPTS) $(LIB_DIRS) common.o methylation_extractor.o -o bison_methylation_extractor -lpthread $(LIBBAM) -lz
+extractor: common.o methylation_extractor.o
+	$(CC) $(LIB_DIRS) -o bison_methylation_extractor common.o methylation_extractor.o $(LIBBAM) -lpthread -lz
 
 #Don't compile herd by default
-herd:  $(OBJS) $(HERD_OBJS)
-	$(CC) -c $(OPTS) $(INCLUDE_DIRS) herd/main.c -o herd/main.o
-	$(CC) $(OPTS) $(OBJS) $(HERD_OBJS) herd/main.o -o bison_herd $(LIB_DIRS) -lm -lpthread $(MPI) $(LIBBAM) -lz
+herd:  $(OBJS) $(HERD_OBJS) herd/main.o
+	$(CC) $(LIB_DIRS) -o bison_herd herd/main.o $(OBJS) $(HERD_OBJS) $(LIBBAM) -lm -lpthread $(MPI) -lz
 
 #Auxiliary programs, don't compile by default
-auxiliary:	merge_CpGs bedGraph2methylKit make_reduced_genome aux_python_scripts CpG_coverage bedGraph2MOABS
+auxiliary: merge_CpGs bedGraph2methylKit make_reduced_genome aux_python_scripts CpG_coverage bedGraph2MOABS
 
 aux_python_scripts:
 	cp -f auxiliary/bedGraph2BSseq.py ./
 	cp -f auxiliary/merge_bedGraphs.py ./
 	cp -f auxiliary/bedGraph2MethylSeekR.py ./
 
-CpG_coverage:	common.o
-	$(CC) -c $(OPTS) $(INCLUDE_DIRS) auxiliary/CpG_coverage.c -o auxiliary/CpG_coverage.o
-	$(CC) $(OPTS) $(LIB_DIRS) common.o auxiliary/CpG_coverage.o -o bison_CpG_coverage
+CpG_coverage: common.o auxiliary/CpG_coverage.o
+	$(CC) $(LIB_DIRS) -o bison_CpG_coverage common.o auxiliary/CpG_coverage.o
 
-merge_CpGs:	common.o
-	$(CC) -c $(OPTS) $(INCLUDE_DIRS) auxiliary/merge_CpGs.c -o auxiliary/merge_CpGs.o
-	$(CC) $(OPTS) $(LIB_DIRS) common.o auxiliary/merge_CpGs.o -o bison_merge_CpGs
+merge_CpGs: common.o auxiliary/merge_CpGs.o
+	$(CC) $(LIB_DIRS) -o bison_merge_CpGs common.o auxiliary/merge_CpGs.o
 
-bedGraph2methylKit:common.o
-	$(CC) -c $(OPTS) $(INCLUDE_DIRS) auxiliary/bedGraph2methylKit.c -o auxiliary/bedGraph2methylKit.o
-	$(CC) $(OPTS) $(LIB_DIRS) common.o auxiliary/bedGraph2methylKit.o -o bedGraph2methylKit
+bedGraph2methylKit: common.o auxiliary/bedGraph2methylKit.o
+	$(CC) $(LIB_DIRS) -o bedGraph2methylKit common.o auxiliary/bedGraph2methylKit.o
 
-bedGraph2MOABS:	common.o
-	$(CC) -c $(OPTS) $(INCLUDE_DIRS) auxiliary/bedGraph2MOABS.c -o auxiliary/bedGraph2MOABS.o
-	$(CC) $(OPTS) $(LIB_DIRS) common.o auxiliary/bedGraph2MOABS.o -o bedGraph2MOABS
+bedGraph2MOABS: common.o auxiliary/bedGraph2MOABS.o
+	$(CC) $(LIB_DIRS) -o bedGraph2MOABS common.o auxiliary/bedGraph2MOABS.o
 
 make_reduced_genome:
 	$(CC) $(OPTS) $(LIB_DIRS) auxiliary/make_reduced_genome.c -o make_reduced_genome
