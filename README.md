@@ -280,6 +280,10 @@ even when limited to the same resources.
 
 ##Changes
 
+###0.3.2b
+
+  *  Fix the Makefile to use the static htslib library.
+
 ###0.3.2
   *  Added bedGraph2MOABS to convert bedGraph files for use by MOABS. See usage
      above.
