@@ -16,7 +16,6 @@ MPI = -lmpi #This is usually appropriate for openmpi
 ifdef HTSLIB
 	OPTS := $(OPTS) -DHTSLIB
 	LIBBAM = $(HTSLIB)
-	#LIBBAM = -lhts
 else
 	LIBBAM = -lbam
 endif
