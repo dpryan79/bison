@@ -2,75 +2,71 @@
 
 void usage(char *prog) {
     printf("Usage: %s [OPTIONS] -g genome_dir {-1 fastq.gz -2 fastq.gz | -U fastq.gz}\n", prog);
-    printf("\n \
-    N.B., Bison has a number of defaults that are different from that of bowtie2.\n \
-    Namely, --no-mixed and --no-discordant are always used. All other options\n \
-    can be changed with the normal bowtie2 options, which change bison's\n \
-    behavior as well. MAPQ scores are recalculated by bison in the same way as\n \
-    they are in bowtie2 (or at least they should be). Any option not listed\n \
-    below will be passed directly to bowtie2, so you can specify, e.g., --very-fast\n \
-    if you want. If you specify --local, --score-min is changed back to the\n \
-    bowtie2 default of 'G,20,6', unless you specify otherwise.\n \
-\n \
--g          Directory containing the genome fasta files and the\n \
-            Bisulfite_Sequences directory.\n \
-\n \
--1          Fastq file containing read #1 (normally named something like \n \
-            foo_1.fastq.gz). Reads needn't be gzipped, but that'll be more\n \
-            convenient.\n \
-\n \
--2          As with -1, but with read #2.\n \
-\n \
--U          For convenience, this denotes a fastq file from single-ended reads.\n \
-            Alternatively, -1 can be used without using -2.\n \
-\n \
--p          How many threads bowtie2 should use on each node. Default is 12.\n \
-\n \
--o          Output directory. By default, everything will be written to the\n \
-            directory holding the fastq files (or the file containing read #1,\n \
-            as appropriate). If you would prefer for the output BAM file and\n \
-            metrics txt file to be placed elsewhere, specify that here.\n \
-\n \
-            N.B., the directory must exist! \n \
-\n \
---directional Denotes that the library was created in a directional, rather\n \
-            than non-directional manner. This will result in 3, rather than 5\n \
-            nodes being used as only alignments to 2 (rather than 4) strands are\n \
-            possible.\n \
-\n \
--upto       The maximum number of reads to process. This is mostly useful for\n \
-            debuging and more quickly determining if a library is directional or\n \
-            not. 0 is the default, meaning all reads are used. N.B., the\n \
-            maximum value for this parameter is whatever an unsigned long is on\n \
-            your system.\n \
-\n \
---unmapped  Save unaligned reads to a file or files (as appropriate).\n \
-\n \
---genome-size Many of the bison tools need to read the genome into memory. By\n \
-            default, they allocate 3000000000 bases worth of memory for this and\n \
-            increase that as needed. However, this can sometimes be far more\n \
-            than is needed (meaning wasted memory) or far too little (in which\n \
-            case the process can become quite slow). If you input the\n \
-            approximate size of your genome here (in bases), then you can\n \
-            maximize performance and minimize wasted space. It's convenient to\n \
-            round up a little.\n \
-\n \
---quiet     Suppress printing of anything other than errors to the console.\n \
-\n \
--h          Print this help message.\n \
-\n \
--v          Print version information.\n \
+    printf("\n\
+    N.B., Any option not listed below will be passed directly to bowtie2, so you\n\
+    can specify, e.g., --very-fast if you want. If you specify --local,\n\
+    --score-min is changed back to the bowtie2 default of 'G,20,6', unless you\n\
+    specify otherwise.\n\
+\n\
+-g          Directory containing the genome fasta files and the\n\
+            Bisulfite_Sequences directory.\n\
+\n\
+-1          Fastq file containing read #1 (normally named something like \n\
+            foo_1.fastq.gz). Reads needn't be gzipped, but that'll be more\n\
+            convenient.\n\
+\n\
+-2          As with -1, but with read #2.\n\
+\n\
+-U          For convenience, this denotes a fastq file from single-ended reads.\n\
+            Alternatively, -1 can be used without using -2.\n\
+\n\
+-p          How many threads bowtie2 should use on each node. Default is 12.\n\
+\n\
+-o          Output directory. By default, everything will be written to the\n\
+            directory holding the fastq files (or the file containing read #1,\n\
+            as appropriate). If you would prefer for the output BAM file and\n\
+            metrics txt file to be placed elsewhere, specify that here.\n\
+\n\
+            N.B., the directory must exist! \n\
+\n\
+--directional Denotes that the library was created in a directional, rather\n\
+            than non-directional manner. This will result in 3, rather than 5\n\
+            nodes being used as only alignments to 2 (rather than 4) strands are\n\
+            possible.\n\
+\n\
+-upto       The maximum number of reads to process. This is mostly useful for\n\
+            debuging and more quickly determining if a library is directional or\n\
+            not. 0 is the default, meaning all reads are used. N.B., the\n\
+            maximum value for this parameter is whatever an unsigned long is on\n\
+            your system.\n\
+\n\
+--unmapped  Save unaligned reads to a file or files (as appropriate).\n\
+\n\
+--genome-size Many of the bison tools need to read the genome into memory. By\n\
+            default, they allocate 3000000000 bases worth of memory for this and\n\
+            increase that as needed. However, this can sometimes be far more\n\
+            than is needed (meaning wasted memory) or far too little (in which\n\
+            case the process can become quite slow). If you input the\n\
+            approximate size of your genome here (in bases), then you can\n\
+            maximize performance and minimize wasted space. It's convenient to\n\
+            round up a little.\n\
+\n\
+--quiet     Suppress printing of anything other than errors to the console.\n\
+\n\
+-h          Print this help message.\n\
+\n\
+-v          Print version information.\n\
 \n");
 #ifdef DEBUG
-    printf("\n \
--taskid     Which node number to act as. The default is 0, the master node.\n \
-            Other possibilities are 1-4, which are the worker nodes that\n \
-            process OT, OB, CTOT, and CTOB alignments, respectively. A value of\n \
-            -1 will only convert the reads.\n \
-\n \
-            Note that if you plan to run with taskid=0 (i.e., as the master\n \
-            node), files named OT.bam, OB.bam, etc. should exist in your\n \
-            working directory. These will be created automatically if you run\n \
+    printf("\n\
+-taskid     Which node number to act as. The default is 0, the master node.\n\
+            Other possibilities are 1-4, which are the worker nodes that\n\
+            process OT, OB, CTOT, and CTOB alignments, respectively. A value of\n\
+            -1 will only convert the reads.\n\
+\n\
+            Note that if you plan to run with taskid=0 (i.e., as the master\n\
+            node), files named OT.bam, OB.bam, etc. should exist in your\n\
+            working directory. These will be created automatically if you run\n\
             each pseudo-worker node first, which is recommended.\n\n");
 #endif
 }

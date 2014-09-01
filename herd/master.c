@@ -19,7 +19,6 @@ void * herd_master_processer_thread(void *a) {
     bam1_t **node2_read = malloc(sizeof(bam1_t*) * 2);
     bam1_t **node3_read = malloc(sizeof(bam1_t*) * 2);
     bam1_t **node4_read = malloc(sizeof(bam1_t*) * 2);
-    bam1_t **best_read = NULL;
     fastq *read = malloc(sizeof(fastq));
     time_t now;
     char ctime_buffer[26];
@@ -142,46 +141,46 @@ void * herd_master_processer_thread(void *a) {
                 best_node = process_paired(node1_read, node2_read, node3_read, node4_read, seq); //Output is stored in read
             }
 
-            if(best_node == 1) {
-                best_read = node1_read;
-                if(!((*best_read)->core.flag & BAM_FUNMAP)) local_m_reads_OT++;
-            } else if(best_node == 2) {
-                best_read = node2_read;
-                if(!((*best_read)->core.flag & BAM_FUNMAP)) local_m_reads_OB++;
-            } else if(best_node == 3) {
-                best_read = node3_read;
-                if(!((*best_read)->core.flag & BAM_FUNMAP)) local_m_reads_CTOT++;
-            } else if(best_node == 4) {
-                best_read = node4_read;
-                if(!((*best_read)->core.flag & BAM_FUNMAP)) local_m_reads_CTOB++;
-            }
-
             //Store the reads and free up space (N.B., the writer thread will free up the space used by the best read)
-            if(best_node != 1) {
-                remove_element(nodes[multiplier*j]);
-                if(config.paired) remove_element(nodes[multiplier*j]);
-            } else {
+            if(!(best_node & 0xF)) { //Unmapped
                 move_element(nodes[multiplier*j], to_write_sentinel_node[thread_id]);
-            }
-            if(best_node != 2) {
-                remove_element(nodes[multiplier*j+1]);
-                if(config.paired) remove_element(nodes[multiplier*j+1]);
-            } else {
+            } else if(best_node & 0x1) { //OT#1
+                local_m_reads_OT++;
+                move_element(nodes[multiplier*j], to_write_sentinel_node[thread_id]);
+            } else remove_element(nodes[multiplier*j]);
+            if(best_node & 0x2) { //OB#1
+                local_m_reads_OB++;
                 move_element(nodes[multiplier*j+1], to_write_sentinel_node[thread_id]);
-            }
+            } else remove_element(nodes[multiplier*j+1]);
             if(!config.directional) {
-                if(best_node != 3) {
-                    remove_element(nodes[multiplier*j+2]);
-                    if(config.paired) remove_element(nodes[multiplier*j+2]);
-                } else {
+                if(best_node & 0x4) { //CTOT#1
+                    local_m_reads_CTOT++;
                     move_element(nodes[multiplier*j+2], to_write_sentinel_node[thread_id]);
-                }
-                if(best_node != 4) {
-                    remove_element(nodes[multiplier*j+3]);
-                    if(config.paired) remove_element(nodes[multiplier*j+3]);
-                } else {
+                } else remove_element(nodes[multiplier*j+2]);
+                if(best_node & 0x8) { //CTOB#1
+                    local_m_reads_CTOB++;
                     move_element(nodes[multiplier*j+3], to_write_sentinel_node[thread_id]);
-                }
+                } else remove_element(nodes[multiplier*j+3]);
+            }
+            if(!(best_node & 0xF0)) { //Unmapped
+                move_element(nodes[multiplier*j], to_write_sentinel_node[thread_id]);
+            } else if(best_node & 0x10) { //OT#2
+                local_m_reads_OT++;
+                move_element(nodes[multiplier*j], to_write_sentinel_node[thread_id]);
+            } else remove_element(nodes[multiplier*j]);
+            if(best_node & 0x20) { //OB#2
+                local_m_reads_OB++;
+                move_element(nodes[multiplier*j+1], to_write_sentinel_node[thread_id]);
+            } else remove_element(nodes[multiplier*j+1]);
+            if(!config.directional) {
+                if(best_node & 0x40) { //CTOT#2
+                    local_m_reads_CTOT++;
+                    move_element(nodes[multiplier*j+2], to_write_sentinel_node[thread_id]);
+                } else remove_element(nodes[multiplier*j+2]);
+                if(best_node & 0x80) { //CTOB#2
+                    local_m_reads_CTOB++;
+                    move_element(nodes[multiplier*j+3], to_write_sentinel_node[thread_id]);
+                } else remove_element(nodes[multiplier*j+3]);
             }
             remove_raw_element(fastq_nodes[j]);
         }

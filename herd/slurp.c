@@ -31,36 +31,20 @@ void move_element(struct packed_struct *source, struct packed_struct *dest) {
     struct packed_struct *new_next = NULL;
 
     //Remove from source
-    if(config.paired) {
-        new_next = source->next->next->next; //the next read #1
-        source->next->next->previous = source->next; //Ensure that read #2 has the address for read #1
-        source->next->previous = dest->previous; //Ensure that read #1 points to the previous read #2
-        //Remove from source
-        element->next->next = dest; //point read #2 to the sentinel node
-        element->state = 0; //read #1 set not ready
-        element->next->state = 0; //read #2 set not ready
-        dest->previous = element->next; //Update the destination sentinel node
-    } else {
-        new_next = source->next->next; //the next read
-        source->next->previous = dest->previous; //Ensure that the read knows who came before it
-        //Remove from source
-        element->next = dest; //Next is the sentinel node
-        element->state = 0; //read is set not ready
-        dest->previous = element; //Update destination sentinel node
-    }
+    new_next = source->next->next; //the next read
+    source->next->previous = dest->previous; //Ensure that the read knows who came before it
+    //Remove from source
+    element->next = dest; //Next is the sentinel node
+    element->state = 0; //read is set not ready
+    dest->previous = element; //Update destination sentinel node
 
     //Update the source
     source->next = new_next;
 
     //Add to destination
     next_to_last->next = element; //Update previous read to point to the new one
-    if(!config.paired) {
-        //Don't do anything if the previous node is a sentinel node
-        if(next_to_last->previous != next_to_last) next_to_last->state = 1; //set previous read to ready
-    } else {
-        //Don't do anything if the previous node is a sentinel node
-        if(next_to_last->previous != next_to_last) next_to_last->previous->state = 1; //Set previous read #1 to ready (we never check read #2
-    }
+    //Don't do anything if the previous node is a sentinel node
+    if(next_to_last->previous != next_to_last) next_to_last->state = 1; //set previous read to ready
 }
 
 /******************************************************************************

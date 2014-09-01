@@ -86,7 +86,6 @@ void * bam_writer(void *a) {
     int nfinished = 0;
     int nlooped = 0, current_file = 0;
     bam1_t *best_read1 = NULL;
-    bam1_t *best_read2 = NULL;
     time_t now;
     char ctime_buffer[26];
 
@@ -154,30 +153,17 @@ void * bam_writer(void *a) {
                     break;
                 }
                 best_read1 = to_write_node[i]->next->packed;
-                if(config.paired) best_read2 = to_write_node[i]->next->next->packed;
-                if(!config.paired) { //single-end
-                    if(!(best_read1->core.flag & BAM_FUNMAP)) {
-                        bam_write1(OUTPUT_BAM, best_read1);
-                        herd_update_counts(best_read1);
-                    } else {
-                        if(config.unmapped) write_unmapped(unmapped1, best_read1);
-                    }
+                if(!(best_read1->core.flag & BAM_FUNMAP)) {
+                    bam_write1(OUTPUT_BAM, best_read1);
+                    herd_update_counts(best_read1);
                 } else {
-                    if(!(best_read1->core.flag & BAM_FUNMAP) && !(best_read2->core.flag & BAM_FUNMAP)) {
-                        bam_write1(OUTPUT_BAM, best_read1);
-                        herd_update_counts(best_read1);
-                        bam_write1(OUTPUT_BAM, best_read2);
-                        herd_update_counts(best_read2);
-                    } else {
-                        if(config.unmapped) {
-                            write_unmapped(unmapped1, best_read1);
-                            write_unmapped(unmapped2, best_read2);
-                        }
+                    if(config.unmapped) {
+                        if(best_read1->core.flag & BAM_FREAD1) write_unmapped(unmapped1, best_read1);
+                        if(best_read1->core.flag & BAM_FREAD2) write_unmapped(unmapped2, best_read1);
                     }
                 }
 
                 remove_element(to_write_node[i]);
-                if(config.paired) remove_element(to_write_node[i]);
                 nlooped = 0;
                 t_reads++;
                 nwritten[current_file]++; //Only keep track of this if we're throttling

@@ -42,7 +42,7 @@ void worker_node(int thread_id) {
     packed_read->packed = NULL;
 
     //construct the bowtie2 command
-    cmd_length += (int) strlen("bowtie2 -q --reorder --no-mixed --no-discordant") + 1;
+    cmd_length += (int) strlen("bowtie2 -q --reorder") + 1;
     cmd_length += (int) strlen(config.bowtie2_options) + 1;
     cmd_length += (int) strlen("--norc -x") + 1;
     cmd_length += (int) strlen(config.genome_dir) + strlen("bisulfite_genome/CT_conversion/BS_CT") + 1;
@@ -51,9 +51,9 @@ void worker_node(int thread_id) {
     cmd = (char *) malloc(sizeof(char) * cmd_length);
     if(thread_id == 1) { //OT Read#1 C->T, Read#2 G->A, Genome C->T only the + strand
         if(config.paired) {
-            sprintf(cmd, "bowtie2 -q --reorder --no-mixed --no-discordant %s --norc -x %sbisulfite_genome/CT_conversion/BS_CT -1 %s -2 %s", config.bowtie2_options, config.genome_dir, config.FASTQ1CT, config.FASTQ2GA);
+            sprintf(cmd, "bowtie2 -q --reorder %s --norc -x %sbisulfite_genome/CT_conversion/BS_CT -1 %s -2 %s", config.bowtie2_options, config.genome_dir, config.FASTQ1CT, config.FASTQ2GA);
         } else {
-            sprintf(cmd, "bowtie2 -q --reorder --no-mixed --no-discordant %s --norc -x %sbisulfite_genome/CT_conversion/BS_CT -U %s", config.bowtie2_options, config.genome_dir, config.FASTQ1CT);
+            sprintf(cmd, "bowtie2 -q --reorder %s --norc -x %sbisulfite_genome/CT_conversion/BS_CT -U %s", config.bowtie2_options, config.genome_dir, config.FASTQ1CT);
         }
 #ifdef DEBUG
         oname = malloc(sizeof(char) *(1+strlen(config.odir)+strlen(config.basename)+strlen("_OT.bam")));
@@ -63,9 +63,9 @@ void worker_node(int thread_id) {
 #endif
     } else if(thread_id == 2) { //OB Read#1 C->T, Read#2 G->A, Genome G->A only the - strand
         if(config.paired) {
-            sprintf(cmd, "bowtie2 -q --reorder --no-mixed --no-discordant %s --nofw -x %sbisulfite_genome/GA_conversion/BS_GA -1 %s -2 %s", config.bowtie2_options, config.genome_dir, config.FASTQ1CT, config.FASTQ2GA);
+            sprintf(cmd, "bowtie2 -q --reorder %s --nofw -x %sbisulfite_genome/GA_conversion/BS_GA -1 %s -2 %s", config.bowtie2_options, config.genome_dir, config.FASTQ1CT, config.FASTQ2GA);
         } else {
-            sprintf(cmd, "bowtie2 -q --reorder --no-mixed --no-discordant %s --nofw -x %sbisulfite_genome/GA_conversion/BS_GA -U %s", config.bowtie2_options, config.genome_dir, config.FASTQ1CT);
+            sprintf(cmd, "bowtie2 -q --reorder %s --nofw -x %sbisulfite_genome/GA_conversion/BS_GA -U %s", config.bowtie2_options, config.genome_dir, config.FASTQ1CT);
         }
 #ifdef DEBUG
         oname = malloc(sizeof(char) *(1+strlen(config.odir)+strlen(config.basename)+strlen("_OB.bam")));
@@ -75,9 +75,9 @@ void worker_node(int thread_id) {
 #endif
     } else if(thread_id == 3) { //CTOT Read#1 G->A, Read#2 C->T, Genome C->T, only the - strand
         if(config.paired) {
-            sprintf(cmd, "bowtie2 -q --reorder --no-mixed --no-discordant %s --nofw -x %sbisulfite_genome/CT_conversion/BS_CT -1 %s -2 %s", config.bowtie2_options, config.genome_dir, config.FASTQ1GA, config.FASTQ2CT);
+            sprintf(cmd, "bowtie2 -q --reorder %s --nofw -x %sbisulfite_genome/CT_conversion/BS_CT -1 %s -2 %s", config.bowtie2_options, config.genome_dir, config.FASTQ1GA, config.FASTQ2CT);
         } else {
-            sprintf(cmd, "bowtie2 -q --reorder --no-mixed --no-discordant %s --nofw -x %sbisulfite_genome/CT_conversion/BS_CT -U %s", config.bowtie2_options, config.genome_dir, config.FASTQ1GA);
+            sprintf(cmd, "bowtie2 -q --reorder %s --nofw -x %sbisulfite_genome/CT_conversion/BS_CT -U %s", config.bowtie2_options, config.genome_dir, config.FASTQ1GA);
         }
 #ifdef DEBUG
         oname = malloc(sizeof(char) *(1+strlen(config.odir)+strlen(config.basename)+strlen("_CTOT.bam")));
@@ -87,9 +87,9 @@ void worker_node(int thread_id) {
 #endif
     } else if(thread_id == 4) { //CTOB Read#1 G->A, Read#2 C->T, Genome G->A, only the + strand
         if(config.paired) {
-            sprintf(cmd, "bowtie2 -q --reorder --no-mixed --no-discordant %s --norc -x %sbisulfite_genome/GA_conversion/BS_GA -1 %s -2 %s", config.bowtie2_options, config.genome_dir, config.FASTQ1GA, config.FASTQ2CT);
+            sprintf(cmd, "bowtie2 -q --reorder %s --norc -x %sbisulfite_genome/GA_conversion/BS_GA -1 %s -2 %s", config.bowtie2_options, config.genome_dir, config.FASTQ1GA, config.FASTQ2CT);
         } else {
-            sprintf(cmd, "bowtie2 -q --reorder --no-mixed --no-discordant %s --norc -x %sbisulfite_genome/GA_conversion/BS_GA -U %s", config.bowtie2_options, config.genome_dir, config.FASTQ1GA);
+            sprintf(cmd, "bowtie2 -q --reorder %s --norc -x %sbisulfite_genome/GA_conversion/BS_GA -U %s", config.bowtie2_options, config.genome_dir, config.FASTQ1GA);
         }
 #ifdef DEBUG
         oname = malloc(sizeof(char) *(1+strlen(config.odir)+strlen(config.basename)+strlen("_CTOB.bam")));

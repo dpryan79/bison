@@ -4,119 +4,116 @@
 void usage(char *prog) {
     printf("Usage: %s [OPTIONS] -g genome_dir/ {-1 fastq_A1.gz,fastq_B1.gz -2 fastq_A2.gz,fastq_B2.gz | -U fastq.gz}\n", prog);
     printf("\n \
-    N.B., Bison has a number of defaults that are different from that of bowtie2.\n \
-    All of these can be changed with the normal bowtie2 options, which change\n \
-    bison's behavior as well. MAPQ scores are recalculated by bison in the same\n \
-    way as they are in bowtie2 (or at least they should be). Any option not\n \
-    listed below will be passed directly to bowtie2, so you can specify, e.g.,\n \
-    --very-fast if you want. If you specify --local, --score-min is changed back\n \
-    to the bowtie2 default of 'G,20,6', unless you specify otherwise.\n \
-\n \
-    Note also that both -1/-2 and -U can accept a comma-separated list of input\n \
-    files. Unlike other aligners, the alignments from each of these files will\n \
-    be output to different files. This is meant to speed alignments of multiple\n \
-    samples, since the bowtie2 index and the genome sequence only need to be\n \
-    loaded a single time. Inputting more than one file (or pair, when using -1\n \
-    -2) implies --reorder.\n \
-\n \
--g          Directory containing the genome fasta files and the\n \
-            Bisulfite_Sequences directory.\n \
-\n \
--1          Fastq file containing read #1 (normally named something like \n \
-            foo_1.fastq.gz). Reads needn't be gzipped, but that'll be more\n \
-            convenient. You may also input a comma-separated list of files to be\n \
-            aligned (but see note above). Doing this implies --reorder.\n \
-\n \
--2          As with -1, but with read #2.\n \
-\n \
--U          For convenience, this denotes a fastq file from single-ended reads.\n \
-            Alternatively, -1 can be used without using -2. As with -1, you may\n \
-            also specify more than one file, in which case alignments from each\n \
-            will be printed to different files.\n \
-\n \
--p          How many threads bowtie2 should use on each node. Default is 11.\n \
-\n \
--mp         How many processing threads should run on the master node. Default\n \
-            is 1. Increasing this will be required to prevent the MPI buffer\n \
-            from becoming depleted and the master node then crashing. However,\n \
-            too many of these will cause resource underutilization. Keep in\n \
-            mind also that there are an additional 2 threads already running to\n \
-            do other things.\n \
-\n \
--o          Output directory. By default, everything will be written to the\n \
-            directory holding the fastq files (or the file containing read #1,\n \
-            as appropriate). If you would prefer for the output BAM file and\n \
-            metrics txt file to be placed elsewhere, specify that here.\n \
-\n \
-            N.B., the directory must exist! \n \
-\n \
--tmp        Temporary directory where named pipes will be created on the worker\n \
-            nodes. This just need to be a directory that is bison_herd can read\n \
-            and write to. The default is \"/tmp\".\n \
-\n \
---directional Denotes that the library was created in a directional, rather\n \
-            than non-directional manner. This will result in 3, rather than 5\n \
-            nodes being used as only alignments to 2 (rather than 4) strands are\n \
-            possible.\n \
-\n \
--upto       The maximum number of reads to process. This is mostly useful for\n \
-            debuging and more quickly determining if a library is directional or\n \
-            not. 0 is the default, meaning all reads are used. N.B., the\n \
-            maximum value for this parameter is whatever an unsigned long is on\n \
-            your system.\n \
-\n \
---reorder   Reorder output to match the same order as the input. This will make\n \
-            things slower, but enable easier comparisons. This is passed to\n \
-            bowtie2 regardless of whether you specify it or not. If you use\n \
-            multiple input files then this option will always be used, even if\n \
-            unspecified.\n \
-\n \
--@          Number of BAM compression threads to use. This is equivalent to -@\n \
-            in samtools. The default is 1, but this may need to be increased as\n \
-            you increase the number of alotted nodes.\n \
-\n \
---unmapped  Save unaligned reads to a file or files (as appropriate). This files\n \
-            will be placed in the same directory as the source fastq files,\n \
-            regardless of whether \"-o\" is used.\n \
+    N.B., Any option not listed below will be passed directly to bowtie2, so you\n\
+    can specify, e.g., --very-fast if you want. If you specify --local,\n\
+    --score-min is changed back to the bowtie2 default of 'G,20,6', unless you\n\
+    specify otherwise.\n\
 \n\
---genome-size Many of the bison tools need to read the genome into memory. By\n \
-            default, they allocate 3000000000 bases worth of memory for this and\n \
-            increase that as needed. However, this can sometimes be far more\n \
-            than is needed (meaning wasted memory) or far too little (in which\n \
-            case the process can become quite slow). If you input the\n \
-            approximate size of your genome here (in bases), then you can\n \
-            maximize performance and minimize wasted space. It's convenient to\n \
-            round up a little.\n \
+    Note also that both -1/-2 and -U can accept a comma-separated list of input\n\
+    files. Unlike other aligners, the alignments from each of these files will\n\
+    be output to different files. This is meant to speed alignments of multiple\n\
+    samples, since the bowtie2 index and the genome sequence only need to be\n\
+    loaded a single time. Inputting more than one file (or pair, when using -1\n\
+    -2) implies --reorder.\n\
+\n\
+-g          Directory containing the genome fasta files and the\n\
+            Bisulfite_Sequences directory.\n\
+\n\
+-1          Fastq file containing read #1 (normally named something like \n\
+            foo_1.fastq.gz). Reads needn't be gzipped, but that'll be more\n\
+            convenient. You may also input a comma-separated list of files to be\n\
+            aligned (but see note above). Doing this implies --reorder.\n\
+\n\
+-2          As with -1, but with read #2.\n\
+\n\
+-U          For convenience, this denotes a fastq file from single-ended reads.\n\
+            Alternatively, -1 can be used without using -2. As with -1, you may\n\
+            also specify more than one file, in which case alignments from each\n\
+            will be printed to different files.\n\
+\n\
+-p          How many threads bowtie2 should use on each node. Default is 11.\n\
+\n\
+-mp         How many processing threads should run on the master node. Default\n\
+            is 1. Increasing this will be required to prevent the MPI buffer\n\
+            from becoming depleted and the master node then crashing. However,\n\
+            too many of these will cause resource underutilization. Keep in\n\
+            mind also that there are an additional 2 threads already running to\n\
+            do other things.\n\
+\n\
+-o          Output directory. By default, everything will be written to the\n\
+            directory holding the fastq files (or the file containing read #1,\n\
+            as appropriate). If you would prefer for the output BAM file and\n\
+            metrics txt file to be placed elsewhere, specify that here.\n\
+\n\
+            N.B., the directory must exist! \n\
+\n\
+-tmp        Temporary directory where named pipes will be created on the worker\n\
+            nodes. This just need to be a directory that is bison_herd can read\n\
+            and write to. The default is \"/tmp\".\n\
+\n\
+--directional Denotes that the library was created in a directional, rather\n\
+            than non-directional manner. This will result in 3, rather than 5\n\
+            nodes being used as only alignments to 2 (rather than 4) strands are\n\
+            possible.\n\
+\n\
+-upto       The maximum number of reads to process. This is mostly useful for\n\
+            debuging and more quickly determining if a library is directional or\n\
+            not. 0 is the default, meaning all reads are used. N.B., the\n\
+            maximum value for this parameter is whatever an unsigned long is on\n\
+            your system.\n\
+\n\
+--reorder   Reorder output to match the same order as the input. This will make\n\
+            things slower, but enable easier comparisons. This is passed to\n\
+            bowtie2 regardless of whether you specify it or not. If you use\n\
+            multiple input files then this option will always be used, even if\n\
+            unspecified.\n\
+\n\
+-@          Number of BAM compression threads to use. This is equivalent to -@\n\
+            in samtools. The default is 1, but this may need to be increased as\n\
+            you increase the number of alotted nodes.\n\
+\n\
+--unmapped  Save unaligned reads to a file or files (as appropriate). This files\n\
+            will be placed in the same directory as the source fastq files,\n\
+            regardless of whether \"-o\" is used.\n\
+\n\
+--genome-size Many of the bison tools need to read the genome into memory. By\n\
+            default, they allocate 3000000000 bases worth of memory for this and\n\
+            increase that as needed. However, this can sometimes be far more\n\
+            than is needed (meaning wasted memory) or far too little (in which\n\
+            case the process can become quite slow). If you input the\n\
+            approximate size of your genome here (in bases), then you can\n\
+            maximize performance and minimize wasted space. It's convenient to\n\
+            round up a little.\n\
 \n");
 #ifndef NOTHROTTLE
-    printf(" \
--queue_size The maximum difference between the number of reads that have been\n \
-            read and the number that have been written. The default is 1000000\n \
-            and a value of 0 (or just not compiling with -DTHROTTLE) will\n \
-            disable this. Since bison_herd can have a quiet large number of\n \
-            worker nodes performing alignments, it can happen that they\n \
-            overwhelm the master node that must then process their results. This\n \
-            option can help to prevent that (though increasing -mp is a better\n \
-            solution) by pausing the sending of reads out for alignment.\n \
+    printf("\
+-queue_size The maximum difference between the number of reads that have been\n\
+            read and the number that have been written. The default is 1000000\n\
+            and a value of 0 (or just not compiling with -DTHROTTLE) will\n\
+            disable this. Since bison_herd can have a quiet large number of\n\
+            worker nodes performing alignments, it can happen that they\n\
+            overwhelm the master node that must then process their results. This\n\
+            option can help to prevent that (though increasing -mp is a better\n\
+            solution) by pausing the sending of reads out for alignment.\n\
 \n");
 #endif
-    printf(" \
---quiet     Don't print anything but errors to the console (this is also passed\n \
-            to bowtie2).\n \
-\n \
--h          Print this help message.\n \
-\n \
--v          Print version information.\n \
+    printf("\
+--quiet     Don't print anything but errors to the console (this is also passed\n\
+            to bowtie2).\n\
+\n\
+-h          Print this help message.\n\
+\n\
+-v          Print version information.\n\
 \n");
 #ifdef DEBUG
     printf("\
--taskid     Which node number to act as. The default is 0, the master node.\n \
-            Other possibilities are 1-4, which are the worker nodes that\n \
-            process OT, OB, CTOT, and CTOB alignments, respectively.\n \
-\n \
-            Note that if you plan to run with taskid=0 (i.e., as the master\n \
-            node), files named OT.bam, OB.bam, etc. should exist in your\n \
-            working directory. These will be created automatically if you run\n \
+-taskid     Which node number to act as. The default is 0, the master node.\n\
+            Other possibilities are 1-4, which are the worker nodes that\n\
+            process OT, OB, CTOT, and CTOB alignments, respectively.\n\
+\n\
+            Note that if you plan to run with taskid=0 (i.e., as the master\n\
+            node), files named OT.bam, OB.bam, etc. should exist in your\n\
+            working directory. These will be created automatically if you run\n\
             each pseudo-worker node first, which is recommended.\n\n");
 #endif
 }

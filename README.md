@@ -280,6 +280,10 @@ even when limited to the same resources.
 
 ##Changes
 
+###0.3.3
+
+  *  Allow mixed and discordant alignments.
+
 ###0.3.2b
 
   *  Fix the Makefile to use the static htslib library.

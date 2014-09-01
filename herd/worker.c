@@ -268,7 +268,7 @@ void herd_worker_node(int thread_id, char *fastq1, char *fastq2) {
     packed_read->packed = NULL;
 
     //construct the bowtie2 command
-    cmd_length += (int) strlen("bowtie2 -q --reorder --no-mixed --no-discordant") + 1;
+    cmd_length += (int) strlen("bowtie2 -q --reorder") + 1;
     cmd_length += (int) strlen(config.bowtie2_options) + 1;
     cmd_length += (int) strlen("--norc -x") + 1;
     cmd_length += (int) strlen(config.genome_dir) + strlen("bisulfite_genome/CT_conversion/BS_CT") + 1;
@@ -286,27 +286,27 @@ void herd_worker_node(int thread_id, char *fastq1, char *fastq2) {
     cmd = (char *) malloc(sizeof(char) * cmd_length);
     if(strand == 0) { //OT Read#1 C->T, Read#2 G->A, Genome C->T only the + strand
         if(config.paired) {
-            sprintf(cmd, "bowtie2 -q --reorder --no-mixed --no-discordant %s --norc -x %sbisulfite_genome/CT_conversion/BS_CT -1 %s -2 %s", config.bowtie2_options, config.genome_dir, fastq1, fastq2);
+            sprintf(cmd, "bowtie2 -q --reorder %s --norc -x %sbisulfite_genome/CT_conversion/BS_CT -1 %s -2 %s", config.bowtie2_options, config.genome_dir, fastq1, fastq2);
         } else {
-            sprintf(cmd, "bowtie2 -q --reorder --no-mixed --no-discordant %s --norc -x %sbisulfite_genome/CT_conversion/BS_CT -U %s", config.bowtie2_options, config.genome_dir, fastq1);
+            sprintf(cmd, "bowtie2 -q --reorder %s --norc -x %sbisulfite_genome/CT_conversion/BS_CT -U %s", config.bowtie2_options, config.genome_dir, fastq1);
         }
     } else if(strand == 1) { //OB Read#1 C->T, Read#2 G->A, Genome G->A only the - strand
         if(config.paired) {
-            sprintf(cmd, "bowtie2 -q --reorder --no-mixed --no-discordant %s --nofw -x %sbisulfite_genome/GA_conversion/BS_GA -1 %s -2 %s", config.bowtie2_options, config.genome_dir, fastq1, fastq2);
+            sprintf(cmd, "bowtie2 -q --reorder %s --nofw -x %sbisulfite_genome/GA_conversion/BS_GA -1 %s -2 %s", config.bowtie2_options, config.genome_dir, fastq1, fastq2);
         } else {
-            sprintf(cmd, "bowtie2 -q --reorder --no-mixed --no-discordant %s --nofw -x %sbisulfite_genome/GA_conversion/BS_GA -U %s", config.bowtie2_options, config.genome_dir, fastq1);
+            sprintf(cmd, "bowtie2 -q --reorder %s --nofw -x %sbisulfite_genome/GA_conversion/BS_GA -U %s", config.bowtie2_options, config.genome_dir, fastq1);
         }
     } else if(strand == 2) { //CTOT Read#1 G->A, Read#2 C->T, Genome C->T, only the - strand
         if(config.paired) {
-            sprintf(cmd, "bowtie2 -q --reorder --no-mixed --no-discordant %s --nofw -x %sbisulfite_genome/CT_conversion/BS_CT -1 %s -2 %s", config.bowtie2_options, config.genome_dir, fastq1, fastq2);
+            sprintf(cmd, "bowtie2 -q --reorder %s --nofw -x %sbisulfite_genome/CT_conversion/BS_CT -1 %s -2 %s", config.bowtie2_options, config.genome_dir, fastq1, fastq2);
         } else {
-            sprintf(cmd, "bowtie2 -q --reorder --no-mixed --no-discordant %s --nofw -x %sbisulfite_genome/CT_conversion/BS_CT -U %s", config.bowtie2_options, config.genome_dir, fastq1);
+            sprintf(cmd, "bowtie2 -q --reorder %s --nofw -x %sbisulfite_genome/CT_conversion/BS_CT -U %s", config.bowtie2_options, config.genome_dir, fastq1);
         }
     } else if(strand == 3) { //CTOB Read#1 G->A, Read#2 C->T, Genome G->A, only the + strand
         if(config.paired) {
-            sprintf(cmd, "bowtie2 -q --reorder --no-mixed --no-discordant %s --norc -x %sbisulfite_genome/GA_conversion/BS_GA -1 %s -2 %s", config.bowtie2_options, config.genome_dir, fastq1, fastq2);
+            sprintf(cmd, "bowtie2 -q --reorder %s --norc -x %sbisulfite_genome/GA_conversion/BS_GA -1 %s -2 %s", config.bowtie2_options, config.genome_dir, fastq1, fastq2);
         } else {
-            sprintf(cmd, "bowtie2 -q --reorder --no-mixed --no-discordant %s --norc -x %sbisulfite_genome/GA_conversion/BS_GA -U %s", config.bowtie2_options, config.genome_dir, fastq1);
+            sprintf(cmd, "bowtie2 -q --reorder %s --norc -x %sbisulfite_genome/GA_conversion/BS_GA -U %s", config.bowtie2_options, config.genome_dir, fastq1);
         }
     } else {
         printf("Oh shit, got strand %i!\n", strand);
