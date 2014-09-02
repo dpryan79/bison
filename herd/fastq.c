@@ -398,7 +398,7 @@ void * send_store_fastq(void *a) {
             }
 #endif
         }
-        flengths[current_file] = total; //Otherwise, the writer thread will keep waiting
+        flengths[current_file] = total*((config.paired)?2:1); //Otherwise, the writer thread will keep waiting
         //Notify the master_processor_threads that they need to update the methylation metrics
         for(j=0; j<nnode_groups; j++) { //This is actually excessive, but we otherwise need to
             finished_signal = malloc(2*sizeof(char)); //We need to malloc() this or it won't be properly free()d after being added to the linked-list.

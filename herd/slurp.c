@@ -30,6 +30,7 @@ void move_element(struct packed_struct *source, struct packed_struct *dest) {
     struct packed_struct *element = source->next;
     struct packed_struct *new_next = NULL;
 
+//    printf("Moving %s\n", (char*) ((bam1_t*)element->packed)->data); fflush(stdout);
     //Remove from source
     new_next = source->next->next; //the next read
     source->next->previous = dest->previous; //Ensure that the read knows who came before it
