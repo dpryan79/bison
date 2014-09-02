@@ -702,7 +702,7 @@ int32_t process_single(bam1_t *read1, bam1_t *read2, bam1_t *read3, bam1_t *read
 *       in blocks of 2.
 *
 *******************************************************************************/
-int32_t find_best_paired(bam1_t **read1, bam1_t **read2, bam1_t **read3, bam1_t **read4, bam1_t *tmp_read1, bam1_t *tmp_read2) {
+int32_t find_best_paired(bam1_t **read1, bam1_t **read2, bam1_t **read3, bam1_t **read4) {
     int AS1=0, AS2=0, AS3=0, AS4=0;
     int proper_pair = 0, mapped = 0;
     int32_t best_node = 0;
@@ -731,76 +731,52 @@ int32_t find_best_paired(bam1_t **read1, bam1_t **read2, bam1_t **read3, bam1_t 
     if(proper_pair) {
         if(config.directional) {
             if(((proper_pair&0x1)?AS1:INT_MIN) > ((proper_pair&0x2)?AS2:INT_MIN)) { //OT
-                tmp_read1 = *(read1);
-                tmp_read2 = *(read1+1);
                 best_node = 1+16;
             } else if(((proper_pair&0x2)?AS2:INT_MIN) > ((proper_pair&0x1)?AS1:INT_MIN)) { //OB
-                tmp_read1 = *(read2);
-                tmp_read2 = *(read2+1);
                 best_node = 2+32;
             }
         } else { //Need to look at all 4 strands
             if(((proper_pair&0x1)?AS1:INT_MIN) > ((proper_pair&0x2)?AS2:INT_MIN) && \
                ((proper_pair&0x1)?AS1:INT_MIN) > ((proper_pair&0x4)?AS3:INT_MIN) && \
                ((proper_pair&0x1)?AS1:INT_MIN) > ((proper_pair&0x8)?AS4:INT_MIN)) { //OT
-                tmp_read1 = *(read1);
-                tmp_read2 = *(read1+1);
                 best_node = 1+16;
             } else if(((proper_pair&0x2)?AS2:INT_MIN) > ((proper_pair&0x1)?AS1:INT_MIN) && \
                ((proper_pair&0x2)?AS2:INT_MIN) > ((proper_pair&0x4)?AS3:INT_MIN) && \
                ((proper_pair&0x2)?AS2:INT_MIN) > ((proper_pair&0x8)?AS4:INT_MIN)) { //OB
-                tmp_read1 = *(read2);
-                tmp_read2 = *(read2+1);
                 best_node = 2+32;
             } else if(((proper_pair&0x4)?AS3:INT_MIN) > ((proper_pair&0x1)?AS1:INT_MIN) && \
                ((proper_pair&0x4)?AS3:INT_MIN) > ((proper_pair&0x2)?AS2:INT_MIN) && \
                ((proper_pair&0x4)?AS3:INT_MIN) > ((proper_pair&0x8)?AS4:INT_MIN)) { //CTOT
-                tmp_read1 = *(read3);
-                tmp_read2 = *(read3+1);
                 best_node = 4+64;
             } else if(((proper_pair&0x8)?AS4:INT_MIN) > ((proper_pair&0x1)?AS1:INT_MIN) && \
                ((proper_pair&0x8)?AS4:INT_MIN) > ((proper_pair&0x2)?AS2:INT_MIN) && \
                ((proper_pair&0x8)?AS4:INT_MIN) > ((proper_pair&0x4)?AS3:INT_MIN)) { //CTOB
-                tmp_read1 = *(read4);
-                tmp_read2 = *(read4+1);
                 best_node = 8+128;
             }
         }
     } else if((mapped&0x30) || (mapped&0xC0) || (mapped&0x300) || (mapped&0xC00)) { //Discordant
         if(config.directional) {
             if(((mapped&0x30)?AS1:INT_MIN) > ((mapped&0xC0)?AS2:INT_MIN)) { //OT
-                tmp_read1 = *(read1);
-                tmp_read2 = *(read1+1);
                 best_node = 1+16;
             } else if(((mapped&0xC0)?AS2:INT_MIN) > ((mapped&0x30)?AS1:INT_MIN)) { //OB
-                tmp_read1 = *(read2);
-                tmp_read2 = *(read2+1);
                 best_node = 2+32;
             }
         } else { //Need to look at all 4 strands
             if(((mapped&0x30)?AS1:INT_MIN) > ((mapped&0xC0)?AS2:INT_MIN) && \
                ((mapped&0x30)?AS1:INT_MIN) > ((mapped&0x300)?AS3:INT_MIN) && \
                ((mapped&0x30)?AS1:INT_MIN) > ((mapped&0xC00)?AS4:INT_MIN)) { //OT
-                tmp_read1 = *(read1);
-                tmp_read2 = *(read1+1);
                 best_node = 1+16;
             } else if(((mapped&0xC0)?AS2:INT_MIN) > ((mapped&0x30)?AS1:INT_MIN) && \
                ((mapped&0xC0)?AS2:INT_MIN) > ((mapped&0x300)?AS3:INT_MIN) && \
                ((mapped&0xC0)?AS2:INT_MIN) > ((mapped&0xC00)?AS4:INT_MIN)) { //OB
-                tmp_read1 = *(read2);
-                tmp_read2 = *(read2+1);
                 best_node = 2+32;
             } else if(((mapped&0x300)?AS3:INT_MIN) > ((mapped&0x30)?AS1:INT_MIN) && \
                ((mapped&0x300)?AS3:INT_MIN) > ((mapped&0xC0)?AS2:INT_MIN) && \
                ((mapped&0x300)?AS3:INT_MIN) > ((mapped&0xC00)?AS4:INT_MIN)) { //CTOT
-                tmp_read1 = *(read3);
-                tmp_read2 = *(read3+1);
                 best_node = 4+64;
             } else if(((mapped&0xC00)?AS4:INT_MIN) > ((mapped&0x30)?AS1:INT_MIN) && \
                ((mapped&0xC00)?AS4:INT_MIN) > ((mapped&0xC0)?AS2:INT_MIN) && \
                ((mapped&0xC00)?AS4:INT_MIN) > ((mapped&0x300)?AS3:INT_MIN)) { //CTOB
-                tmp_read1 = *(read4);
-                tmp_read2 = *(read4+1);
                 best_node = 8+128;
             }
         }
@@ -808,47 +784,35 @@ int32_t find_best_paired(bam1_t **read1, bam1_t **read2, bam1_t **read3, bam1_t 
         if(config.directional) {
             //Read1
             if(get_AS(*(read1)) > get_AS(*(read2))) {
-                tmp_read1 = *(read1);
-                best_node = 1;
+                best_node += 1;
             } else if(get_AS(*(read2)) > get_AS(*(read1))) {
-                tmp_read1 = *(read2);
-                best_node = 2;
+                best_node += 2;
             }
             //Read2
             if(get_AS(*(read1+1)) > get_AS(*(read2+1))) {
-                tmp_read1 = *(read1+1);
                 best_node += 16;
             } else if(get_AS(*(read2+1)) > get_AS(*(read1+1))) {
-                tmp_read1 = *(read2+1);
                 best_node += 32;
             }
         } else {
             //Read1
             if(get_AS(*(read1)) > get_AS(*(read2)) && get_AS(*(read1)) > get_AS(*(read3)) && get_AS(*(read1)) > get_AS(*(read4))) {
-                tmp_read1 = *(read1);
-                best_node = 1;
+                best_node += 1;
             } else if(get_AS(*(read2)) > get_AS(*(read1)) && get_AS(*(read2)) > get_AS(*(read3)) && get_AS(*(read2)) > get_AS(*(read4))) {
-                tmp_read1 = *(read2);
-                best_node = 2;
+                best_node += 2;
             } else if(get_AS(*(read3)) > get_AS(*(read1)) && get_AS(*(read3)) > get_AS(*(read2)) && get_AS(*(read3)) > get_AS(*(read4))) {
-                tmp_read1 = *(read3);
-                best_node = 4;
+                best_node += 4;
             } else if(get_AS(*(read4)) > get_AS(*(read1)) && get_AS(*(read4)) > get_AS(*(read2)) && get_AS(*(read4)) > get_AS(*(read3))) {
-                tmp_read1 = *(read4);
-                best_node = 8;
+                best_node += 8;
             }
             //Read2
             if(get_AS(*(read1+1)) > get_AS(*(read2+1)) && get_AS(*(read1+1)) > get_AS(*(read3+1)) && get_AS(*(read1+1)) > get_AS(*(read4+1))) {
-                tmp_read2 = *(read1+1);
                 best_node += 16;
             } else if(get_AS(*(read2+1)) > get_AS(*(read1+1)) && get_AS(*(read2+1)) > get_AS(*(read3+1)) && get_AS(*(read2+1)) > get_AS(*(read4+1))) {
-                tmp_read2 = *(read2+1);
                 best_node += 32;
             } else if(get_AS(*(read3+1)) > get_AS(*(read1+1)) && get_AS(*(read3+1)) > get_AS(*(read2+1)) && get_AS(*(read3+1)) > get_AS(*(read4+1))) {
-                tmp_read2 = *(read3+1);
                 best_node += 64;
             } else if(get_AS(*(read4+1)) > get_AS(*(read1+1)) && get_AS(*(read4+1)) > get_AS(*(read2+1)) && get_AS(*(read4+1)) > get_AS(*(read3+1))) {
-                tmp_read2 = *(read4+1);
                 best_node += 128;
             }
         }
@@ -883,41 +847,49 @@ int32_t process_paired(bam1_t **read1, bam1_t **read2, bam1_t **read3, bam1_t **
     int32_t best_node = 0;
 
     //Point tmp_read1 & tmp_read2 to the best alignments
-    best_node = find_best_paired(read1, read2, read3, read4, tmp_read1, tmp_read2);
+    best_node = find_best_paired(read1, read2, read3, read4);
 
-    //Set XR1, XR2, XG1, XG2
+    //Set XR1, XR2, XG1, XG2, tmp_read1, tmp_read2
     if(best_node & 0xFF) { //A best node or nodes
         if(best_node & 0x1) { //OT
             sprintf(XR1, "CT");
             sprintf(XG1, "CT");
+            tmp_read1 = *read1;
         }
         if(best_node & 0x10) {
             sprintf(XR2, "GA");
             sprintf(XG2, "CT");
+            tmp_read2 = *(read1+1);
         }
         if(best_node & 0x2) { //OB
             sprintf(XR1, "CT");
             sprintf(XG1, "GA");
+            tmp_read1 = *read2;
         }
         if(best_node & 0x20) {
             sprintf(XR2, "GA");
             sprintf(XG2, "GA");
+            tmp_read2 = *(read2+1);
         }
         if(best_node & 0x4) { //CTOT
             sprintf(XR1, "GA");
             sprintf(XG1, "CT");
+            tmp_read1 = *read3;
         }
         if(best_node & 0x40) {
             sprintf(XR2, "CT");
             sprintf(XG2, "CT");
+            tmp_read2 = *(read3+1);
         }
         if(best_node & 0x8) { //CTOB
             sprintf(XR1, "GA");
             sprintf(XG1, "GA");
+            tmp_read1 = *read4;
         }
         if(best_node & 0x80) {
             sprintf(XR2, "CT");
             sprintf(XG2, "GA");
+            tmp_read2 = *(read4+1);
         }
     }
 
