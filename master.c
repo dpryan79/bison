@@ -985,7 +985,6 @@ int32_t process_paired(bam1_t **read1, bam1_t **read2, bam1_t **read3, bam1_t **
         bam_aux_append(tmp_read1, "XM", 'Z', kXM1->l + 1, (uint8_t*) kXM1->s);
         bam_aux_append(tmp_read1, "XR", 'Z', 3, (uint8_t*) XR1);
         bam_aux_append(tmp_read1, "XG", 'Z', 3, (uint8_t*) XG1);
-        bam_aux_append(tmp_read1, "XS", 'i', 4, (uint8_t*) &XS1);
 
         //free things up
         free(kXX1->s);
@@ -995,6 +994,7 @@ int32_t process_paired(bam1_t **read1, bam1_t **read2, bam1_t **read3, bam1_t **
 
         //Recalculate MAPQ
         scMin1 = scoreMin(tmp_read1->core.l_qseq);
+        if(XS1 >= scMin1) bam_aux_append(tmp_read1, "XS", 'i', 4, (uint8_t*) &XS1);
         //Discordant or concordant?
         if(best_node & 0xF00 || (((best_node&0xF)<<4) == (best_node&0xF0))) {
             scMin2 = scoreMin(tmp_read2->core.l_qseq);
@@ -1037,7 +1037,6 @@ int32_t process_paired(bam1_t **read1, bam1_t **read2, bam1_t **read3, bam1_t **
         bam_aux_append(tmp_read2, "XM", 'Z', kXM2->l + 1, (uint8_t*) kXM2->s);
         bam_aux_append(tmp_read2, "XR", 'Z', 3, (uint8_t*) XR2);
         bam_aux_append(tmp_read2, "XG", 'Z', 3, (uint8_t*) XG2);
-        bam_aux_append(tmp_read2, "XS", 'i', 4, (uint8_t*) &XS2);
 
         //free things up
         free(kXX2->s);
@@ -1047,6 +1046,7 @@ int32_t process_paired(bam1_t **read1, bam1_t **read2, bam1_t **read3, bam1_t **
 
         //Recalculate MAPQ
         scMin2 = scoreMin(tmp_read2->core.l_qseq);
+        if(XS2 >= scMin2) bam_aux_append(tmp_read2, "XS", 'i', 4, (uint8_t*) &XS2);
         //Update MAPQ if this is a singleton
         if(!(best_node & 0xF00 || (((best_node&0xF)<<4) == (best_node&0xF0)))) {
             MAPQ = calc_MAPQ_BT2(get_AS(tmp_read2), XS2, scMin2);
