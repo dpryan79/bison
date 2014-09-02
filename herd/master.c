@@ -25,6 +25,7 @@ void * herd_master_processer_thread(void *a) {
     unsigned long long local_m_reads_OT = 0, local_m_reads_OB = 0;
     unsigned long long local_m_reads_CTOT = 0, local_m_reads_CTOB = 0;
     unsigned long long local_total = 0;
+    unsigned long long local_concordant = 0, local_discordant = 0, local_singletons = 0;
 
     //Properly set the number of node groups and other small things
     if(config.directional) {
@@ -107,6 +108,9 @@ void * herd_master_processer_thread(void *a) {
                 //Update!
 //lock
                 pthread_mutex_lock(&metrics_mutex);
+                t_concordant += local_concordant;
+                t_discordant += local_discordant;
+                t_singletons += local_singletons;
                 m_reads_OT += local_m_reads_OT;
                 m_reads_OB += local_m_reads_OB;
                 m_reads_CTOT += local_m_reads_CTOT;
@@ -117,6 +121,9 @@ void * herd_master_processer_thread(void *a) {
                 local_m_reads_OB = 0;
                 local_m_reads_CTOT = 0;
                 local_m_reads_CTOB = 0;
+                local_concordant = 0;
+                local_discordant = 0;
+                local_singletons = 0;
                 local_total = 0;
                 tmp_j = j;
                 for(j=node_base; j<node_final; j++) {
@@ -139,6 +146,16 @@ void * herd_master_processer_thread(void *a) {
                 best_node = process_single(*node1_read, *node2_read, *node3_read, *node4_read, *seq); //Output is stored in read1
             } else {
                 best_node = process_paired(node1_read, node2_read, node3_read, node4_read, seq); //Output is stored in read
+            }
+
+            //Update concordant/discordant/singleton metrics as needed
+            if(config.paired) {
+                if(best_node & 0xF00 && best_node & 0xFF) local_concordant++;
+                else if(best_node&0x11 || best_node&0x22 || best_node&0x44 || best_node&0x88) local_discordant++;
+                else {
+                    if(best_node & 0xF) local_singletons++; //Read#1
+                    if(best_node & 0xF0) local_singletons++; //Read#2
+                }
             }
 
             //Store the reads and free up space (N.B., the writer thread will free up the space used by the best read)
@@ -189,6 +206,9 @@ void * herd_master_processer_thread(void *a) {
     //Update the global metrics
 //lock
     pthread_mutex_lock(&metrics_mutex);
+    t_concordant += local_concordant;
+    t_discordant += local_discordant;
+    t_singletons += local_singletons;
     m_reads_OT += local_m_reads_OT;
     m_reads_OB += local_m_reads_OB;
     m_reads_CTOT += local_m_reads_CTOT;

@@ -84,6 +84,9 @@ FILE *unmapped1;
 FILE *unmapped2;
 bamFile OUTPUT_BAM;
 unsigned long long t_reads; //total number of reads
+unsigned long long t_concordant; //Total concordant pairs
+unsigned long long t_discordant; //Total discordant pairs
+unsigned long long t_singletons; //Total singletons
 unsigned long long m_reads_OT; //total number mapped to the OT strand
 unsigned long long m_reads_OB;
 unsigned long long m_reads_CTOT;

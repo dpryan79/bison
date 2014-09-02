@@ -110,6 +110,9 @@ void * bam_writer(void *a) {
                 if(flengths[current_file] > 0 && flengths[current_file] == t_reads) {
                     print_metrics();
                     t_reads = 0;
+                    t_concordant = 0;
+                    t_discordant = 0;
+                    t_singletons = 0;
                     m_reads_OT = 0;
                     m_reads_OB = 0;
                     m_reads_CTOT = 0;

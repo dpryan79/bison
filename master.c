@@ -4,6 +4,9 @@
 
 typedef struct {
     unsigned long long t_reads; //total reads
+    unsigned long long t_concordant; //total concordant pairs
+    unsigned long long t_discordant; //total discordant pairs
+    unsigned long long t_singletons; //total singleton alignments
     unsigned long long m_reads_OT; //reads mapped to the OT
     unsigned long long m_reads_OB;
     unsigned long long m_reads_CTOT;
@@ -704,27 +707,27 @@ int32_t process_single(bam1_t *read1, bam1_t *read2, bam1_t *read3, bam1_t *read
 *******************************************************************************/
 int32_t find_best_paired(bam1_t **read1, bam1_t **read2, bam1_t **read3, bam1_t **read4) {
     int AS1=0, AS2=0, AS3=0, AS4=0;
-    int proper_pair = 0, mapped = 0;
+    int32_t proper_pair = 0, mapped = 0;
     int32_t best_node = 0;
 
     //Determine the read with the highest alignment score
     AS1 = get_AS(*(read1)) + get_AS(*(read1+1));
-    if((*(read1))->core.flag & BAM_FPROPER_PAIR) proper_pair &= 0x1;
-    if(!((*(read1))->core.flag & BAM_FUNMAP)) mapped &= 0x1;
-    if(!((*(read1+1))->core.flag & BAM_FUNMAP)) mapped &= 0x2;
+    if((*(read1))->core.flag & BAM_FPROPER_PAIR) proper_pair |= 0x1;
+    if(!((*(read1))->core.flag & BAM_FUNMAP)) mapped |= 0x1;
+    if(!((*(read1+1))->core.flag & BAM_FUNMAP)) mapped |= 0x2;
     AS2 = get_AS(*(read2)) + get_AS(*(read2+1));
-    if((*(read2))->core.flag & BAM_FPROPER_PAIR) proper_pair &= 0x2;
-    if(!((*(read2))->core.flag & BAM_FUNMAP)) mapped &= 0x4;
-    if(!((*(read2+1))->core.flag & BAM_FUNMAP)) mapped &= 0x8;
+    if((*(read2))->core.flag & BAM_FPROPER_PAIR) proper_pair |= 0x2;
+    if(!((*(read2))->core.flag & BAM_FUNMAP)) mapped |= 0x4;
+    if(!((*(read2+1))->core.flag & BAM_FUNMAP)) mapped |= 0x8;
     if(!config.directional) {
         AS3 = get_AS(*(read3)) + get_AS(*(read3+1));
-        if((*(read3))->core.flag & BAM_FPROPER_PAIR) proper_pair &= 0x4;
-        if(!((*(read3))->core.flag & BAM_FUNMAP)) mapped &= 0x10;
-        if(!((*(read3+1))->core.flag & BAM_FUNMAP)) mapped &= 0x20;
+        if((*(read3))->core.flag & BAM_FPROPER_PAIR) proper_pair |= 0x4;
+        if(!((*(read3))->core.flag & BAM_FUNMAP)) mapped |= 0x10;
+        if(!((*(read3+1))->core.flag & BAM_FUNMAP)) mapped |= 0x20;
         AS4 = get_AS(*(read4)) + get_AS(*(read4+1));
-        if((*(read4))->core.flag & BAM_FPROPER_PAIR) proper_pair &= 0x8;
-        if(!((*(read4))->core.flag & BAM_FUNMAP)) mapped &= 0x40;
-        if(!((*(read4+1))->core.flag & BAM_FUNMAP)) mapped &= 0x80;
+        if((*(read4))->core.flag & BAM_FPROPER_PAIR) proper_pair |= 0x8;
+        if(!((*(read4))->core.flag & BAM_FUNMAP)) mapped |= 0x40;
+        if(!((*(read4+1))->core.flag & BAM_FUNMAP)) mapped |= 0x80;
     }
 
     //If we have any properly paired reads, then they get priority
@@ -754,29 +757,29 @@ int32_t find_best_paired(bam1_t **read1, bam1_t **read2, bam1_t **read3, bam1_t 
                 best_node = 8+128;
             }
         }
-    } else if((mapped&0x30) || (mapped&0xC0) || (mapped&0x300) || (mapped&0xC00)) { //Discordant
+    } else if((mapped&0x3) || (mapped&0xC) || (mapped&0x30) || (mapped&0xC0)) { //Discordant
         if(config.directional) {
-            if(((mapped&0x30)?AS1:INT_MIN) > ((mapped&0xC0)?AS2:INT_MIN)) { //OT
+            if(((mapped&0x3)?AS1:INT_MIN) > ((mapped&0xC)?AS2:INT_MIN)) { //OT
                 best_node = 1+16;
-            } else if(((mapped&0xC0)?AS2:INT_MIN) > ((mapped&0x30)?AS1:INT_MIN)) { //OB
+            } else if(((mapped&0xC)?AS2:INT_MIN) > ((mapped&0x3)?AS1:INT_MIN)) { //OB
                 best_node = 2+32;
             }
         } else { //Need to look at all 4 strands
-            if(((mapped&0x30)?AS1:INT_MIN) > ((mapped&0xC0)?AS2:INT_MIN) && \
-               ((mapped&0x30)?AS1:INT_MIN) > ((mapped&0x300)?AS3:INT_MIN) && \
-               ((mapped&0x30)?AS1:INT_MIN) > ((mapped&0xC00)?AS4:INT_MIN)) { //OT
+            if(((mapped&0x3)?AS1:INT_MIN) > ((mapped&0xC)?AS2:INT_MIN) && \
+               ((mapped&0x3)?AS1:INT_MIN) > ((mapped&0x30)?AS3:INT_MIN) && \
+               ((mapped&0x3)?AS1:INT_MIN) > ((mapped&0xC0)?AS4:INT_MIN)) { //OT
                 best_node = 1+16;
-            } else if(((mapped&0xC0)?AS2:INT_MIN) > ((mapped&0x30)?AS1:INT_MIN) && \
-               ((mapped&0xC0)?AS2:INT_MIN) > ((mapped&0x300)?AS3:INT_MIN) && \
-               ((mapped&0xC0)?AS2:INT_MIN) > ((mapped&0xC00)?AS4:INT_MIN)) { //OB
+            } else if(((mapped&0xC)?AS2:INT_MIN) > ((mapped&0x3)?AS1:INT_MIN) && \
+               ((mapped&0xC)?AS2:INT_MIN) > ((mapped&0x30)?AS3:INT_MIN) && \
+               ((mapped&0xC)?AS2:INT_MIN) > ((mapped&0xC0)?AS4:INT_MIN)) { //OB
                 best_node = 2+32;
-            } else if(((mapped&0x300)?AS3:INT_MIN) > ((mapped&0x30)?AS1:INT_MIN) && \
-               ((mapped&0x300)?AS3:INT_MIN) > ((mapped&0xC0)?AS2:INT_MIN) && \
-               ((mapped&0x300)?AS3:INT_MIN) > ((mapped&0xC00)?AS4:INT_MIN)) { //CTOT
+            } else if(((mapped&0x30)?AS3:INT_MIN) > ((mapped&0x3)?AS1:INT_MIN) && \
+               ((mapped&0x30)?AS3:INT_MIN) > ((mapped&0xC)?AS2:INT_MIN) && \
+               ((mapped&0x30)?AS3:INT_MIN) > ((mapped&0xC0)?AS4:INT_MIN)) { //CTOT
                 best_node = 4+64;
-            } else if(((mapped&0xC00)?AS4:INT_MIN) > ((mapped&0x30)?AS1:INT_MIN) && \
-               ((mapped&0xC00)?AS4:INT_MIN) > ((mapped&0xC0)?AS2:INT_MIN) && \
-               ((mapped&0xC00)?AS4:INT_MIN) > ((mapped&0x300)?AS3:INT_MIN)) { //CTOB
+            } else if(((mapped&0xC0)?AS4:INT_MIN) > ((mapped&0x3)?AS1:INT_MIN) && \
+               ((mapped&0xC0)?AS4:INT_MIN) > ((mapped&0xC)?AS2:INT_MIN) && \
+               ((mapped&0xC0)?AS4:INT_MIN) > ((mapped&0x30)?AS3:INT_MIN)) { //CTOB
                 best_node = 8+128;
             }
         }
@@ -784,9 +787,9 @@ int32_t find_best_paired(bam1_t **read1, bam1_t **read2, bam1_t **read3, bam1_t 
         if(config.directional) {
             //Read1
             if(get_AS(*(read1)) > get_AS(*(read2))) {
-                best_node += 1;
+                best_node = 1;
             } else if(get_AS(*(read2)) > get_AS(*(read1))) {
-                best_node += 2;
+                best_node = 2;
             }
             //Read2
             if(get_AS(*(read1+1)) > get_AS(*(read2+1))) {
@@ -797,13 +800,13 @@ int32_t find_best_paired(bam1_t **read1, bam1_t **read2, bam1_t **read3, bam1_t 
         } else {
             //Read1
             if(get_AS(*(read1)) > get_AS(*(read2)) && get_AS(*(read1)) > get_AS(*(read3)) && get_AS(*(read1)) > get_AS(*(read4))) {
-                best_node += 1;
+                best_node = 1;
             } else if(get_AS(*(read2)) > get_AS(*(read1)) && get_AS(*(read2)) > get_AS(*(read3)) && get_AS(*(read2)) > get_AS(*(read4))) {
-                best_node += 2;
+                best_node = 2;
             } else if(get_AS(*(read3)) > get_AS(*(read1)) && get_AS(*(read3)) > get_AS(*(read2)) && get_AS(*(read3)) > get_AS(*(read4))) {
-                best_node += 4;
+                best_node = 4;
             } else if(get_AS(*(read4)) > get_AS(*(read1)) && get_AS(*(read4)) > get_AS(*(read2)) && get_AS(*(read4)) > get_AS(*(read3))) {
-                best_node += 8;
+                best_node = 8;
             }
             //Read2
             if(get_AS(*(read1+1)) > get_AS(*(read2+1)) && get_AS(*(read1+1)) > get_AS(*(read3+1)) && get_AS(*(read1+1)) > get_AS(*(read4+1))) {
@@ -820,7 +823,7 @@ int32_t find_best_paired(bam1_t **read1, bam1_t **read2, bam1_t **read3, bam1_t 
 
     //Add on the bit maps to the return value
     best_node += (proper_pair<<8);
-    best_node += (mapped<<8);
+    best_node += (mapped<<12);
 
     return best_node;
 }
@@ -922,25 +925,25 @@ int32_t process_paired(bam1_t **read1, bam1_t **read2, bam1_t **read3, bam1_t **
             }
         }
     } else if((best_node&0x11) || (best_node&0x22) || (best_node&0x44) || (best_node&0x88)) { //Discordant
-        if(!(best_node & 0x1) && best_node & 0x11000) { //OT
+        if(!(best_node & 0x1) && best_node & 0x3000) { //OT
             if(XS1+XS2<get_AS(*(read1))+get_AS(*(read1+1))) {
                 XS1 = get_AS(*(read1));
                 XS2 = get_AS(*(read1+1));
             }
         }
-        if(!(best_node & 0x2) && best_node & 0x22000) { //OB
+        if(!(best_node & 0x2) && best_node & 0xC000) { //OB
             if(XS1+XS2<get_AS(*(read2))+get_AS(*(read2+1))) {
                 XS1 = get_AS(*(read2));
                 XS2 = get_AS(*(read2+1));
             }
         }
-        if(!(best_node & 0x4) && best_node & 0x44000) { //CTOT
+        if(!(best_node & 0x4) && best_node & 0x30000) { //CTOT
             if(XS1+XS2<get_AS(*(read3))+get_AS(*(read3+1))) {
                 XS1 = get_AS(*(read3));
                 XS2 = get_AS(*(read3+1));
             }
         }
-        if(!(best_node & 0x8) && best_node & 0x88000) { //CTOB
+        if(!(best_node & 0x8) && best_node & 0xC0000) { //CTOB
             if(XS1+XS2<get_AS(*(read4))+get_AS(*(read4+1))) {
                 XS1 = get_AS(*(read4));
                 XS2 = get_AS(*(read4+1));
@@ -948,12 +951,12 @@ int32_t process_paired(bam1_t **read1, bam1_t **read2, bam1_t **read3, bam1_t **
         }
     } else if(best_node) { //Singletons
         if(!(best_node & 0x1) && best_node & 0x1000) XS1 = (XS1 < get_XS(*read1))?get_XS(*read1):XS1;
-        if(!(best_node & 0x10) && best_node & 0x10000) XS2 = (XS2 < get_XS(*(read1+1)))?get_XS(*(read1+1)):XS2;
-        if(!(best_node & 0x2) && best_node & 0x2000) XS1 = (XS1 < get_XS(*read2))?get_XS(*read2):XS1;
-        if(!(best_node & 0x20) && best_node & 0x20000) XS2 = (XS2 < get_XS(*(read2+1)))?get_XS(*(read2+1)):XS2;
-        if(!(best_node & 0x4) && best_node & 0x4000) XS1 = (XS1 < get_XS(*read3))?get_XS(*read3):XS1;
-        if(!(best_node & 0x40) && best_node & 0x40000) XS2 = (XS2 < get_XS(*(read3+1)))?get_XS(*(read3+1)):XS2;
-        if(!(best_node & 0x8) && best_node & 0x8000) XS1 = (XS1 < get_XS(*read4))?get_XS(*read4):XS1;
+        if(!(best_node & 0x10) && best_node & 0x2000) XS2 = (XS2 < get_XS(*(read1+1)))?get_XS(*(read1+1)):XS2;
+        if(!(best_node & 0x2) && best_node & 0x4000) XS1 = (XS1 < get_XS(*read2))?get_XS(*read2):XS1;
+        if(!(best_node & 0x20) && best_node & 0x8000) XS2 = (XS2 < get_XS(*(read2+1)))?get_XS(*(read2+1)):XS2;
+        if(!(best_node & 0x4) && best_node & 0x10000) XS1 = (XS1 < get_XS(*read3))?get_XS(*read3):XS1;
+        if(!(best_node & 0x40) && best_node & 0x20000) XS2 = (XS2 < get_XS(*(read3+1)))?get_XS(*(read3+1)):XS2;
+        if(!(best_node & 0x8) && best_node & 0x40000) XS1 = (XS1 < get_XS(*read4))?get_XS(*read4):XS1;
         if(!(best_node & 0x80) && best_node & 0x80000) XS2 = (XS2 < get_XS(*(read4+1)))?get_XS(*(read4+1)):XS2;
     }
 
@@ -1119,18 +1122,7 @@ void * master_processer_thread(void *a) {
     time_t now;
 
     //Metrics
-    metrics_struct *metrics = malloc(sizeof(metrics_struct));
-    metrics->t_reads = 0;
-    metrics->m_reads_OT = 0;
-    metrics->m_reads_OB = 0;
-    metrics->m_reads_CTOT = 0;
-    metrics->m_reads_CTOB = 0;
-    metrics->t_CpG = 0;
-    metrics->m_CpG = 0;
-    metrics->t_CHG = 0;
-    metrics->m_CHG = 0;
-    metrics->t_CHH = 0;
-    metrics->m_CHH = 0;
+    metrics_struct *metrics = calloc(1,sizeof(metrics_struct));
 
     //Process read i/o
     while(1) {
@@ -1183,6 +1175,7 @@ void * master_processer_thread(void *a) {
         } else {
             best_node = process_paired(node1_read, node2_read, node3_read, node4_read, seq); //Output is stored in read
         }
+        printf("%"PRId32"\n", best_node); fflush(stdout);
         best_read1 = NULL;
         best_read2 = NULL;
         if(best_node & 0x1) { //OT
@@ -1218,6 +1211,16 @@ void * master_processer_thread(void *a) {
             metrics->m_reads_CTOB++;
         }
 
+        //Update concordant/discordant/singleton metrics
+        if(config.paired) {
+            if(best_node & 0xF00 && best_node & 0xFF) metrics->t_concordant++;
+            else if(best_node&0x11 || best_node&0x22 || best_node&0x44 || best_node&0x88) metrics->t_discordant++;
+            else {
+                if(best_node & 0xF) metrics->t_singletons++; //Read#1
+                if(best_node & 0xF0) metrics->t_singletons++; //Read#2
+            }
+        }
+
         //Store the reads
         if(best_read1) {
             bam_write1(OUTPUT_BAM, best_read1);
@@ -1245,6 +1248,9 @@ void * master_processer_thread(void *a) {
 
     //Update the global metrics
     t_reads += metrics->t_reads;
+    t_concordant += metrics->t_concordant;
+    t_discordant += metrics->t_discordant;
+    t_singletons += metrics->t_singletons;
     m_reads_OT += metrics->m_reads_OT;
     m_reads_OB += metrics->m_reads_OB;
     m_reads_CTOT += metrics->m_reads_CTOT;

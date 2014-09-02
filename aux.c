@@ -125,12 +125,20 @@ void print_metrics() {
     fprintf(fp,"Alignment:\n");
     if(config.paired) {
         if(!config.quiet) {
-            printf("\t%llu total paired-end reads analysed\n", t_reads);
+            printf("\t%llu total reads analysed\n", t_reads);
             printf("\t%llu reads mapped (%6.2f%%).\n", m_reads, ((float) (100*m_reads))/((float) t_reads));
             printf("\n");
+            printf("\t%llu concordant pairs\n", t_concordant);
+            printf("\t%llu discordant pairs\n", t_discordant);
+            printf("\t%llu reads aligned as singletons\n", t_singletons);
+            printf("\n");
         }
-        fprintf(fp, "\t%llu total paired-end reads analysed\n", t_reads);
+        fprintf(fp, "\t%llu total reads analysed\n", t_reads);
         fprintf(fp, "\t%llu paired-end reads mapped (%6.2f%%).\n", m_reads, ((float) (100*m_reads))/((float) t_reads));
+        fprintf(fp, "\n");
+        fprintf(fp, "\t%llu concordant pairs\n", t_concordant);
+        fprintf(fp, "\t%llu discordant pairs\n", t_discordant);
+        fprintf(fp, "\t%llu reads aligned as singletons\n", t_singletons);
         fprintf(fp, "\n");
     } else {
         if(!config.quiet) {
@@ -144,19 +152,10 @@ void print_metrics() {
     }
     if(!config.quiet) {
         printf("Number of hits aligning to each of the orientations:\n");
-/*
-        if(config.paired) {
-            printf("\t%llu\t%6.2f%%\tOT (original top strand)\n", m_reads_OT, ((float) (100*m_reads_OT))/((float) 2*t_reads));
-            printf("\t%llu\t%6.2f%%\tOB (original bottom strand)\n", m_reads_OB, ((float) (100*m_reads_OB))/((float) 2*t_reads));
-            if(!config.directional) printf("\t%llu\t%6.2f%%\tCTOT (complementary to the original top strand)\n", m_reads_CTOT, ((float) (100*m_reads_CTOT))/((float) 2*t_reads));
-            if(!config.directional) printf("\t%llu\t%6.2f%%\tCTOB (complementary to the original bottom strand)\n", m_reads_CTOB, ((float) (100*m_reads_CTOB))/((float) 2*t_reads));
-        } else {
-*/
-            printf("\t%llu\t%6.2f%%\tOT (original top strand)\n", m_reads_OT, ((float) (100*m_reads_OT))/((float) t_reads));
-            printf("\t%llu\t%6.2f%%\tOB (original bottom strand)\n", m_reads_OB, ((float) (100*m_reads_OB))/((float) t_reads));
-            if(!config.directional) printf("\t%llu\t%6.2f%%\tCTOT (complementary to the original top strand)\n", m_reads_CTOT, ((float) (100*m_reads_CTOT))/((float) t_reads));
-            if(!config.directional) printf("\t%llu\t%6.2f%%\tCTOB (complementary to the original bottom strand)\n", m_reads_CTOB, ((float) (100*m_reads_CTOB))/((float) t_reads));
-//        }
+        printf("\t%llu\t%6.2f%%\tOT (original top strand)\n", m_reads_OT, ((float) (100*m_reads_OT))/((float) t_reads));
+        printf("\t%llu\t%6.2f%%\tOB (original bottom strand)\n", m_reads_OB, ((float) (100*m_reads_OB))/((float) t_reads));
+        if(!config.directional) printf("\t%llu\t%6.2f%%\tCTOT (complementary to the original top strand)\n", m_reads_CTOT, ((float) (100*m_reads_CTOT))/((float) t_reads));
+        if(!config.directional) printf("\t%llu\t%6.2f%%\tCTOB (complementary to the original bottom strand)\n", m_reads_CTOB, ((float) (100*m_reads_CTOB))/((float) t_reads));
         printf("\n");
         printf("Cytosine Methylation (N.B., statistics from overlapping mates are added together!):\n");
         printf("\tNumber of C's in a CpG context: %llu\n", t_CpG);
@@ -167,19 +166,10 @@ void print_metrics() {
         printf("\tPercentage of methylated C's in a CHH context: %6.2f%%\n", ((float) (100*m_CHH))/((float) t_CHH));
     }
     fprintf(fp,"Number of hits aligning to each of the orientations:\n");
-/*
-    if(config.paired) {
-        fprintf(fp,"\t%llu\t%6.2f%%\tOT (original top strand)\n", m_reads_OT, ((float) (100*m_reads_OT))/((float) 2*t_reads));
-        fprintf(fp,"\t%llu\t%6.2f%%\tOB (original bottom strand)\n", m_reads_OB, ((float) (100*m_reads_OB))/((float) 2*t_reads));
-        if(!config.directional) fprintf(fp,"\t%llu\t%6.2f%%\tCTOT (complementary to the original top strand)\n", m_reads_CTOT, ((float) (100*m_reads_CTOT))/((float) 2*t_reads));
-        if(!config.directional) fprintf(fp,"\t%llu\t%6.2f%%\tCTOB (complementary to the original bottom strand)\n", m_reads_CTOB, ((float) (100*m_reads_CTOB))/((float) 2*t_reads));
-    } else {
-*/
-        fprintf(fp,"\t%llu\t%6.2f%%\tOT (original top strand)\n", m_reads_OT, ((float) (100*m_reads_OT))/((float) t_reads));
-        fprintf(fp,"\t%llu\t%6.2f%%\tOB (original bottom strand)\n", m_reads_OB, ((float) (100*m_reads_OB))/((float) t_reads));
-        if(!config.directional) fprintf(fp,"\t%llu\t%6.2f%%\tCTOT (complementary to the original top strand)\n", m_reads_CTOT, ((float) (100*m_reads_CTOT))/((float) t_reads));
-        if(!config.directional) fprintf(fp,"\t%llu\t%6.2f%%\tCTOB (complementary to the original bottom strand)\n", m_reads_CTOB, ((float) (100*m_reads_CTOB))/((float) t_reads));
-//    }
+    fprintf(fp,"\t%llu\t%6.2f%%\tOT (original top strand)\n", m_reads_OT, ((float) (100*m_reads_OT))/((float) t_reads));
+    fprintf(fp,"\t%llu\t%6.2f%%\tOB (original bottom strand)\n", m_reads_OB, ((float) (100*m_reads_OB))/((float) t_reads));
+    if(!config.directional) fprintf(fp,"\t%llu\t%6.2f%%\tCTOT (complementary to the original top strand)\n", m_reads_CTOT, ((float) (100*m_reads_CTOT))/((float) t_reads));
+    if(!config.directional) fprintf(fp,"\t%llu\t%6.2f%%\tCTOB (complementary to the original bottom strand)\n", m_reads_CTOB, ((float) (100*m_reads_CTOB))/((float) t_reads));
     fprintf(fp,"\n");
     fprintf(fp,"Cytosine Methylation (N.B., statistics from overlapping mates are added together!):\n");
     fprintf(fp,"\tNumber of C's in a CpG context: %llu\n", t_CpG);
