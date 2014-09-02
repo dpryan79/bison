@@ -195,7 +195,6 @@ void * herd_master_processer_thread(void *a) {
     m_reads_CTOB += local_m_reads_CTOB;
     pthread_mutex_unlock(&metrics_mutex);
 //unlock
-    printf("Should now add finished\n"); fflush(stdout);
 
     //Tell the writer thread that we're finished
     add_finished(to_write_sentinel_node[thread_id]);

@@ -1183,6 +1183,8 @@ void * master_processer_thread(void *a) {
         } else {
             best_node = process_paired(node1_read, node2_read, node3_read, node4_read, seq); //Output is stored in read
         }
+        best_read1 = NULL;
+        best_read2 = NULL;
         if(best_node & 0x1) { //OT
             best_read1 = *node1_read;
             metrics->m_reads_OT++;
