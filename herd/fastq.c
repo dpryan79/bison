@@ -392,8 +392,14 @@ void * send_store_fastq(void *a) {
 
 #ifndef NOTHROTTLE
             if(config.reads_in_queue > 0) {
-                if(total % THROTTLE_CHECK_INTERVAL == 0) {
-                    while(total - nwritten[current_file] > config.reads_in_queue) sleep(1);
+                if(config.paired) {
+                    if((2*total) % THROTTLE_CHECK_INTERVAL == 0) {
+                        while(2*total - nwritten[current_file] > 2*config.reads_in_queue) sleep(1);
+                    }
+                } else {
+                    if(total % THROTTLE_CHECK_INTERVAL == 0) {
+                        while(total - nwritten[current_file] > config.reads_in_queue) sleep(1);
+                    }
                 }
             }
 #endif
