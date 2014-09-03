@@ -732,6 +732,7 @@ int32_t find_best_paired(bam1_t **read1, bam1_t **read2, bam1_t **read3, bam1_t 
 
     //If we have any properly paired reads, then they get priority
     if(proper_pair) {
+//        printf("concordant %s\n", (*read1)->data); fflush(stdout);
         if(config.directional) {
             if(((proper_pair&0x1)?AS1:INT_MIN) > ((proper_pair&0x2)?AS2:INT_MIN)) { //OT
                 best_node = 1+16;
@@ -757,7 +758,8 @@ int32_t find_best_paired(bam1_t **read1, bam1_t **read2, bam1_t **read3, bam1_t 
                 best_node = 8+128;
             }
         }
-    } else if((mapped&0x3) || (mapped&0xC) || (mapped&0x30) || (mapped&0xC0)) { //Discordant
+    } else if(((mapped&0x3)==0x3) || ((mapped&0xC)==0xC) || ((mapped&0x30)==0x30) || ((mapped&0xC0)==0xC0)) { //Discordant
+//        printf("discordant %s %i\n", (*read1)->data, mapped); fflush(stdout);
         if(config.directional) {
             if(((mapped&0x3)?AS1:INT_MIN) > ((mapped&0xC)?AS2:INT_MIN)) { //OT
                 best_node = 1+16;
@@ -784,6 +786,7 @@ int32_t find_best_paired(bam1_t **read1, bam1_t **read2, bam1_t **read3, bam1_t 
             }
         }
     } else { //Try to find singletons
+//        printf("singletons %s\n", (*read1)->data); fflush(stdout);
         if(config.directional) {
             //Read1
             if(get_AS(*(read1)) > get_AS(*(read2))) {
@@ -959,6 +962,24 @@ int32_t process_paired(bam1_t **read1, bam1_t **read2, bam1_t **read3, bam1_t **
         if(!(best_node & 0x8) && best_node & 0x40000) XS1 = (XS1 < get_XS(*read4))?get_XS(*read4):XS1;
         if(!(best_node & 0x80) && best_node & 0x80000) XS2 = (XS2 < get_XS(*(read4+1)))?get_XS(*(read4+1)):XS2;
     }
+
+    //DEBUG
+/*
+    kstring_t str;
+    printf("best_node: %" PRId32 "\n", best_node); fflush(stdout);
+    if(tmp_read1 != NULL) {
+        str.l = str.m = 0; str.s = NULL;
+        sam_format1(global_header, tmp_read1, &str);
+        printf("tmp_read1: %s\n", str.s); fflush(stdout);
+        free(str.s);
+    }
+    if(tmp_read2 != NULL) {
+        str.l = str.m = 0; str.s = NULL;
+        sam_format1(global_header, tmp_read2, &str);
+        printf("tmp_read2: %s\n", str.s); fflush(stdout);
+        free(str.s);
+    }
+*/
 
     //If there is no best score (tmp_read == NULL), mark reads as unmapped
     if(tmp_read1 != NULL) {

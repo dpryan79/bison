@@ -256,6 +256,7 @@ void herd_worker_node(int thread_id, char *fastq1, char *fastq2) {
     int i = 0;
 #endif
     time_t t0, t1;
+    int swapped = 0;
 
     //Which strand should we be aligning to?
     if(config.directional) {
@@ -371,6 +372,26 @@ void herd_worker_node(int thread_id, char *fastq1, char *fastq2) {
             strcpy(last_qname, bam1_qname(read1));
         }
 
+        //Are paired-end reads in the wrong order?
+        swapped = 0;
+        if(config.paired) {
+            if(read1->core.flag & BAM_FREAD2) {
+                swapped = 1;
+                sam_read1(fp, header, read2);
+                packed_read = pack_read(read2, packed_read);
+#ifndef DEBUG
+                MPI_Send((void *) packed_read->packed, packed_read->size, MPI_BYTE, 0, 5, MPI_COMM_WORLD);
+#else
+                bam_write1(of, read2);
+                if(packed_read->size > current_p_size) p = realloc(p, packed_read->size);
+                MPI_Isend((void *) packed_read->packed, packed_read->size, MPI_BYTE, 0, 5, MPI_COMM_WORLD, &request);
+                status = MPI_Recv(p, packed_read->size, MPI_BYTE, 0, 5, MPI_COMM_WORLD, &stat);
+                MPI_Wait(&request, &stat);
+                debug_read = unpack_read(debug_read, p);
+#endif
+            }
+        }
+
         //Send the read
         packed_read = pack_read(read1, packed_read);
 #ifndef DEBUG
@@ -382,7 +403,7 @@ void herd_worker_node(int thread_id, char *fastq1, char *fastq2) {
         MPI_Wait(&request, &stat);
 #endif
         //Deal with paired-end reads
-        if(config.paired) {
+        if(config.paired && !swapped) {
             sam_read1(fp, header, read2);
             packed_read = pack_read(read2, packed_read);
 #ifndef DEBUG
