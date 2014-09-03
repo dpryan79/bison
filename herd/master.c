@@ -151,7 +151,7 @@ void * herd_master_processer_thread(void *a) {
             //Update concordant/discordant/singleton metrics as needed
             if(config.paired) {
                 if(best_node & 0xF00 && best_node & 0xFF) local_concordant++;
-                else if(best_node&0x11 || best_node&0x22 || best_node&0x44 || best_node&0x88) local_discordant++;
+                else if((best_node&0x11)==0x11 || (best_node&0x22)==0x22 || (best_node&0x44)==0x44 || (best_node&0x88)==0x88) local_discordant++;
                 else {
                     if(best_node & 0xF) local_singletons++; //Read#1
                     if(best_node & 0xF0) local_singletons++; //Read#2

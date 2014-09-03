@@ -927,7 +927,7 @@ int32_t process_paired(bam1_t **read1, bam1_t **read2, bam1_t **read3, bam1_t **
                 XS2 = get_AS(*(read4+1));
             }
         }
-    } else if((best_node&0x11) || (best_node&0x22) || (best_node&0x44) || (best_node&0x88)) { //Discordant
+    } else if((best_node&0x11)==0x11 || (best_node&0x22)==0x22 || (best_node&0x44)==0x44 || (best_node&0x88)==0x88) { //Discordant
         if(!(best_node & 0x1) && best_node & 0x3000) { //OT
             if(XS1+XS2<get_AS(*(read1))+get_AS(*(read1+1))) {
                 XS1 = get_AS(*(read1));
@@ -1235,7 +1235,7 @@ void * master_processer_thread(void *a) {
         //Update concordant/discordant/singleton metrics
         if(config.paired) {
             if(best_node & 0xF00 && best_node & 0xFF) metrics->t_concordant++;
-            else if(best_node&0x11 || best_node&0x22 || best_node&0x44 || best_node&0x88) metrics->t_discordant++;
+            else if((best_node&0x11)==0x11 || (best_node&0x22)==0x22 || (best_node&0x44)==0x44 || (best_node&0x88)==0x88) metrics->t_discordant++;
             else {
                 if(best_node & 0xF) metrics->t_singletons++; //Read#1
                 if(best_node & 0xF0) metrics->t_singletons++; //Read#2
