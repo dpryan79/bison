@@ -512,7 +512,9 @@ int main(int argc, char *argv[]) {
     if(taskid == MASTER) {
 #endif
         free(nwritten);
+        for(i=0;i<multi_file;i++) free(fnames1[i]);
         free(fnames1);
+        if(config.paired) for(i=0;i<multi_file;i++) free(fnames2[i]);
         free(fnames2);
         free(flengths);
 #ifndef DEBUG
@@ -521,6 +523,7 @@ int main(int argc, char *argv[]) {
 
     //Clean up
     if(config.odir != NULL) free(config.odir);
+    if(config.genome_dir != NULL) free(config.genome_dir);
     quit(3, 0);
     return 0;
 }

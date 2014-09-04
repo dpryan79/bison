@@ -476,6 +476,12 @@ finish: //We'll only ever "goto" here on an error, otherwise we'll get here norm
     free(read->seq2);
     free(read->qual2);
     free(read);
+    free(f1->buf);
+    free(f1);
+    if(config.paired) {
+        free(f2->buf);
+        free(f2);
+    }
     wordfree(&fnames1_wordexp);
     if(config.paired) wordfree(&fnames2_wordexp);
     if(!config.quiet) printf("Finished reading in fastq files!\n"); fflush(stdout);

@@ -150,15 +150,15 @@ void * slurp_fastq(void *a) {
     MPI_Status status;
     fastq *read = malloc(sizeof(fastq));
 
-    first_writer = malloc(sizeof(struct packed_struct));
-    first_writer_sentinel = malloc(sizeof(struct packed_struct));
+//    first_writer = malloc(sizeof(struct packed_struct));
+//    first_writer_sentinel = malloc(sizeof(struct packed_struct));
     first_writer = initialize_list(first_writer);
     first_writer_sentinel = first_writer->next;
     pthread_create(&(threads[0]), NULL, &first_writer_func, a);
     if(config.paired) {
         //If we have pairs, then writing simultaneuosly to two fifos (that will be read sequentially by bowtie2) won't work, since bowtie2 will read from a single fifo multiple times!!!
-        second_writer = malloc(sizeof(struct packed_struct));
-        second_writer_sentinel = malloc(sizeof(struct packed_struct));
+//        second_writer = malloc(sizeof(struct packed_struct));
+//        second_writer_sentinel = malloc(sizeof(struct packed_struct));
         second_writer = initialize_list(second_writer);
         second_writer_sentinel = second_writer->next;
         pthread_create(&(threads[1]), NULL, &second_writer_func, a);
