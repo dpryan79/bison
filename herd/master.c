@@ -179,25 +179,25 @@ void * herd_master_processer_thread(void *a) {
                     move_element(nodes[multiplier*j+3], to_write_sentinel_node[thread_id]);
                 } else remove_element(nodes[multiplier*j+3]);
             }
-            if(!(best_node & 0xF0)) { //Unmapped
+            if(!(best_node & 0xF0) && config.paired) { //Unmapped
                 move_element(nodes[multiplier*j], to_write_sentinel_node[thread_id]);
             } else if(best_node & 0x10) { //OT#2
                 local_m_reads_OT++;
                 move_element(nodes[multiplier*j], to_write_sentinel_node[thread_id]);
-            } else remove_element(nodes[multiplier*j]);
+            } else if(config.paired) remove_element(nodes[multiplier*j]);
             if(best_node & 0x20) { //OB#2
                 local_m_reads_OB++;
                 move_element(nodes[multiplier*j+1], to_write_sentinel_node[thread_id]);
-            } else remove_element(nodes[multiplier*j+1]);
+            } else if(config.paired) remove_element(nodes[multiplier*j+1]);
             if(!config.directional) {
                 if(best_node & 0x40) { //CTOT#2
                     local_m_reads_CTOT++;
                     move_element(nodes[multiplier*j+2], to_write_sentinel_node[thread_id]);
-                } else remove_element(nodes[multiplier*j+2]);
+                } else if(config.paired) remove_element(nodes[multiplier*j+2]);
                 if(best_node & 0x80) { //CTOB#2
                     local_m_reads_CTOB++;
                     move_element(nodes[multiplier*j+3], to_write_sentinel_node[thread_id]);
-                } else remove_element(nodes[multiplier*j+3]);
+                } else if(config.paired) remove_element(nodes[multiplier*j+3]);
             }
             remove_raw_element(fastq_nodes[j]);
         }
