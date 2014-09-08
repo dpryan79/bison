@@ -15,14 +15,6 @@ unsigned long long *calculate_positions(bam1_t *read) {
     uint32_t *CIGAR = bam1_cigar(read);
     unsigned int previous_position = (unsigned int) read->core.pos;
 
-    //DEBUG
-    if(read->core.n_cigar == 0) {
-        kstring_t str;
-        str.l = str.m = 0; str.s = NULL;
-        sam_format1(global_header, read, &str);
-        printf("0 CIGAR: %s\n", str.s); fflush(stdout);
-        free(str.s);
-    }
     for(i=0; i<read->core.n_cigar; i++) {
         op = *(CIGAR+i) & 15;
         op_len = (*(CIGAR+i)) >> 4;
