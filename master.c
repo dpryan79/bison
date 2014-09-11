@@ -1030,6 +1030,7 @@ int32_t process_paired(bam1_t **read1, bam1_t **read2, bam1_t **read3, bam1_t **
         } else {
             if(!(tmp_read2->core.flag & 0x8)) tmp_read2->core.flag |= 0x8;
             tmp_read2->core.mtid = -1;
+            tmp_read2->core.mpos = -1;
         }
         //alter aux tags
         kputs(XX2, kXX2);
