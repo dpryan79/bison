@@ -850,7 +850,7 @@ int32_t process_paired(bam1_t **read1, bam1_t **read2, bam1_t **read3, bam1_t **
     int XS1 = INT_MIN>>1, XS2 = INT_MIN>>1;
     int32_t best_node = 0;
 
-    //Point tmp_read1 & tmp_read2 to the best alignments
+    //Determine the best node(s)
     best_node = find_best_paired(read1, read2, read3, read4);
 
     //Set XR1, XR2, XG1, XG2, tmp_read1, tmp_read2
@@ -971,10 +971,13 @@ int32_t process_paired(bam1_t **read1, bam1_t **read2, bam1_t **read3, bam1_t **
             if(tmp_read1->core.flag & 0x8) tmp_read1->core.flag ^= 0x8;
             if(tmp_read2->core.flag & 0x10) tmp_read1->core.flag |= 0x20;
             tmp_read1->core.mtid = tmp_read2->core.tid;
+            tmp_read1->core.mpos = tmp_read2->core.pos;
             tmp_read2->core.mtid = tmp_read1->core.tid;
+            tmp_read2->core.mpos = tmp_read1->core.pos;
         } else {
             if(!(tmp_read1->core.flag & 0x8)) tmp_read1->core.flag |= 0x8;
             tmp_read1->core.mtid = -1;
+            tmp_read1->core.mpos = -1;
         }
         //alter aux tags
         kputs(XX1, kXX1);
