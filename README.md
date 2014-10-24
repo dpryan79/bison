@@ -2,6 +2,9 @@
 
 **N.B.: There is now a tutorial available [here](http://sourceforge.net/projects/dna-bison/files/bison_tutorial.tar.gz/download). This tutorial largely replaces this README file and users are encouraged to read it.**
 
+If you use Bison in your work please site the following:
+[Ryan D.P. and Ehninger D. **Bison: bisulfite alignment on nodes of a cluster.** *BMC Bioinformatics* 2014, Oct 18;**15**(1):337]{http://www.biomedcentral.com/1471-2105/15/337}
+
 ##Usage
 
 One can index all fasta files (files with extension .fa or .fasta) in a
