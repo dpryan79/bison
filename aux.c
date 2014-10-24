@@ -125,12 +125,20 @@ void print_metrics() {
     fprintf(fp,"Alignment:\n");
     if(config.paired) {
         if(!config.quiet) {
-            printf("\t%llu total paired-end reads analysed\n", t_reads);
-            printf("\t%llu paired-end reads mapped (%6.2f%%).\n", m_reads, ((float) (100*m_reads))/((float) t_reads));
+            printf("\t%llu total reads analysed\n", t_reads);
+            printf("\t%llu reads mapped (%6.2f%%).\n", m_reads, ((float) (100*m_reads))/((float) t_reads));
+            printf("\n");
+            printf("\t%llu concordant pairs\n", t_concordant);
+            printf("\t%llu discordant pairs\n", t_discordant);
+            printf("\t%llu reads aligned as singletons\n", t_singletons);
             printf("\n");
         }
-        fprintf(fp, "\t%llu total paired-end reads analysed\n", t_reads);
+        fprintf(fp, "\t%llu total reads analysed\n", t_reads);
         fprintf(fp, "\t%llu paired-end reads mapped (%6.2f%%).\n", m_reads, ((float) (100*m_reads))/((float) t_reads));
+        fprintf(fp, "\n");
+        fprintf(fp, "\t%llu concordant pairs\n", t_concordant);
+        fprintf(fp, "\t%llu discordant pairs\n", t_discordant);
+        fprintf(fp, "\t%llu reads aligned as singletons\n", t_singletons);
         fprintf(fp, "\n");
     } else {
         if(!config.quiet) {

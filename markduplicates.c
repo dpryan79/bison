@@ -1,13 +1,4 @@
 #include "bison.h"
-/*
-#include <assert.h>
-#include <inttypes.h>
-#ifndef HTSLIB
-#include <bam.h>
-#else
-#include "htslib/sam.h"
-#endif
-*/
 
 #define WORD_OFFSET(b) (b)/32
 #define BIT_OFFSET(b) (b)%32
@@ -37,7 +28,7 @@ void fill_table() {
 }
 
 typedef struct {
-    int32_t tid, start1, start2, total_phred; //First 2 bits of tid denote strand: OT 00, OB 01, CTOT 10, CTOB 11, so ~1 billion contigs
+    int32_t tid1, tid2, start1, start2, total_phred; //First 2 bits of tid denote strand: OT 00, OB 01, CTOT 10, CTOB 11, so ~1 billion contigs
     uint64_t meth[8], unmeth[8];
     uint32_t read_number;
 } alignment;
@@ -77,66 +68,75 @@ int lookup_popcount(uint64_t c) {
 
 /*
     Sort a list of alignments, they'll be ordered as follows (always low to high):
-    (1) tid (chromosome index ID), which is also strand
-    (2) start1 (5' position of read #1)
-    (3) start2 (5' position of read #2)
-    (4) strand (0 OT, 1 OB, 2 CTOT, 3 CTOB)
-    (5) total calls, aka Hamming weight (high to low)
-    (6) total phred (high to low)
+    (1) tid1 (chromosome index ID), which is also strand
+    (2) tid2 (chromosome index ID), which is also strand
+    (3) start1 (5' position of read #1)
+    (4) start2 (5' position of read #2)
+    (5) strand (0 OT, 1 OB, 2 CTOT, 3 CTOB)
+    (6) total calls, aka Hamming weight (high to low)
+    (7) total phred (high to low)
 */
 int comp_func(const void *a, const void *b) {
     alignment *a1 = (alignment*) a;
     alignment *a2 = (alignment*) b;
     int ncalls1, ncalls2;
 
-    if(a1->tid < a2->tid) return -1; //tid, strand
-    else if(a1->tid > a2->tid) return 1;
+    if(a1->tid1 < a2->tid1) return -1; //tid1, strand
+    else if(a1->tid1 > a2->tid1) return 1;
     else {
-        if(a1->start1 < a2->start1) return -1; //start1
-        else if(a1->start1 > a2->start1) return 1;
+        if(a1->tid2 < a2->tid2) return -1; //tid2, strand
+        else if(a1->tid2 > a2->tid2) return 1;
         else {
-            if(a1->start2 < a2->start2) return -1; //start2
-            else if(a1->start2 > a2->start2) return 1;
+            if(a1->start1 < a2->start1) return -1; //start1
+            else if(a1->start1 > a2->start1) return 1;
             else {
-                ncalls1 = lookup_popcount(a1->meth[0]) + lookup_popcount(a1->meth[1]) \
-                    + lookup_popcount(a1->meth[2]) + lookup_popcount(a1->meth[3]) \
-                    + lookup_popcount(a1->meth[4]) + lookup_popcount(a1->meth[5]) \
-                    + lookup_popcount(a1->meth[6]) + lookup_popcount(a1->meth[7]) \
-                    + lookup_popcount(a1->unmeth[0]) + lookup_popcount(a1->unmeth[1]) \
-                    + lookup_popcount(a1->unmeth[3]) + lookup_popcount(a1->unmeth[3]) \
-                    + lookup_popcount(a1->unmeth[4]) + lookup_popcount(a1->unmeth[5]) \
-                    + lookup_popcount(a1->unmeth[6]) + lookup_popcount(a1->unmeth[7]);
-                ncalls2 = lookup_popcount(a2->meth[0]) + lookup_popcount(a2->meth[1]) \
-                    + lookup_popcount(a2->meth[2]) + lookup_popcount(a2->meth[3]) \
-                    + lookup_popcount(a2->meth[4]) + lookup_popcount(a2->meth[5]) \
-                    + lookup_popcount(a2->meth[6]) + lookup_popcount(a2->meth[7]) \
-                    + lookup_popcount(a2->unmeth[0]) + lookup_popcount(a2->unmeth[1]) \
-                    + lookup_popcount(a2->unmeth[3]) + lookup_popcount(a2->unmeth[3]) \
-                    + lookup_popcount(a2->unmeth[4]) + lookup_popcount(a2->unmeth[5]) \
-                    + lookup_popcount(a2->unmeth[6]) + lookup_popcount(a2->unmeth[7]);
-                if(ncalls1 > ncalls2) return -1; //total calls
-                else if(ncalls1 < ncalls2) return 1;
+                if(a1->start2 < a2->start2) return -1; //start2
+                else if(a1->start2 > a2->start2) return 1;
                 else {
-                    if(a1->total_phred > a2->total_phred) return -1; //sum of phred scores, this is backwords
-                    else if(a1->total_phred < a2->total_phred) return 1;
-                    else return 0;
+                    ncalls1 = lookup_popcount(a1->meth[0]) + lookup_popcount(a1->meth[1]) \
+                        + lookup_popcount(a1->meth[2]) + lookup_popcount(a1->meth[3]) \
+                        + lookup_popcount(a1->meth[4]) + lookup_popcount(a1->meth[5]) \
+                        + lookup_popcount(a1->meth[6]) + lookup_popcount(a1->meth[7]) \
+                        + lookup_popcount(a1->unmeth[0]) + lookup_popcount(a1->unmeth[1]) \
+                        + lookup_popcount(a1->unmeth[3]) + lookup_popcount(a1->unmeth[3]) \
+                        + lookup_popcount(a1->unmeth[4]) + lookup_popcount(a1->unmeth[5]) \
+                        + lookup_popcount(a1->unmeth[6]) + lookup_popcount(a1->unmeth[7]);
+                    ncalls2 = lookup_popcount(a2->meth[0]) + lookup_popcount(a2->meth[1]) \
+                        + lookup_popcount(a2->meth[2]) + lookup_popcount(a2->meth[3]) \
+                        + lookup_popcount(a2->meth[4]) + lookup_popcount(a2->meth[5]) \
+                        + lookup_popcount(a2->meth[6]) + lookup_popcount(a2->meth[7]) \
+                        + lookup_popcount(a2->unmeth[0]) + lookup_popcount(a2->unmeth[1]) \
+                        + lookup_popcount(a2->unmeth[3]) + lookup_popcount(a2->unmeth[3]) \
+                        + lookup_popcount(a2->unmeth[4]) + lookup_popcount(a2->unmeth[5]) \
+                        + lookup_popcount(a2->unmeth[6]) + lookup_popcount(a2->unmeth[7]);
+                    if(ncalls1 > ncalls2) return -1; //total calls
+                    else if(ncalls1 < ncalls2) return 1;
+                    else {
+                        if(a1->total_phred > a2->total_phred) return -1; //sum of phred scores, this is backwords
+                        else if(a1->total_phred < a2->total_phred) return 1;
+                        else return 0;
+                    }
                 }
             }
         }
     }
 }
 
-//This is the same as comp_func(), with only tid, start1, start2 and strand used
+//This is the same as comp_func(), with only tid1, tid2, start1, start2 and strand used
 int comp_func2(alignment *a1, alignment *a2) {
-    if(a1->tid < a2->tid) return -1;
-    else if(a1->tid > a2->tid) return 1;
+    if(a1->tid1 < a2->tid1) return -1;
+    else if(a1->tid1 > a2->tid1) return 1;
     else {
-        if(a1->start1 < a2->start1) return -1;
-        else if(a1->start1 > a2->start1) return 1;
+        if(a1->tid2 < a2->tid2) return -1;
+        else if(a1->tid2 > a2->tid2) return 1;
         else {
-            if(a1->start2 < a2->start2) return -1;
-            else if(a1->start2 > a2->start2) return 1;
-            else return 0;
+            if(a1->start1 < a2->start1) return -1;
+            else if(a1->start1 > a2->start1) return 1;
+            else {
+                if(a1->start2 < a2->start2) return -1;
+                else if(a1->start2 > a2->start2) return 1;
+                else return 0;
+            }
         }
     }
 }
@@ -226,7 +226,7 @@ uint64_t mark_dups(alignment *alignments, uint32_t *bitmap, uint64_t total_pairs
 
     while(i<total_pairs) {
         /*
-            Process the alignments in bins of possible duplicates (by tid, start1, start2)
+            Process the alignments in bins of possible duplicates (by tid1, tid2, start1, start2)
             Within each bin, mark duplicates.
         */
         bin_width = get_bin_limits(alignments+i, total_pairs-i);
@@ -272,12 +272,22 @@ inline int32_t get_strand(bam1_t *read) {
     char *XG = bam_aux2Z(bam_aux_get(read, "XG"));
     char *XR = bam_aux2Z(bam_aux_get(read, "XR"));
 
-    if(*XG == 'C') { //OT or CTOT
-        if(*XR == 'C') return 0; //OT
-        else return 2; //CTOT
-    } else {
-        if(*XR == 'C') return 1; //OB
-        else return 3; //CTOB
+    if(read->core.flag & BAM_FREAD1) {
+        if(*XG == 'C') { //OT or CTOT
+            if(*XR == 'C') return 0; //OT
+            else return 2; //CTOT
+        } else {
+            if(*XR == 'C') return 1; //OB
+            else return 3; //CTOB
+        }
+    } else { //For read #2, things are a bit different
+        if(*XG == 'C') { //OT or CTOT
+            if(*XR == 'C') return 2; //CTOT
+            else return 0; //OT
+        } else {
+            if(*XR == 'C') return 3; //CTOB
+            else return 1; //OB
+        }
     }
 }
 
@@ -447,7 +457,7 @@ int main(int argc, char *argv[]) {
     while(bam_read1(fp, read) > 1) {
         if(read->core.flag & BAM_FUNMAP) continue; //We just skip over unmapped reads
 
-        alignments[total_pairs].tid = get_tid(read);
+        alignments[total_pairs].tid1 = get_tid(read);
         alignments[total_pairs].start1 = get_pos(read);
         alignments[total_pairs].total_phred = total_phred(read);
         for(i=0;i<8;i++) { //Ensure that everything starts at 0!
@@ -456,8 +466,9 @@ int main(int argc, char *argv[]) {
         }
         alignments[total_pairs].start2 = 0;
         calls2uint(read, alignments[total_pairs].meth, alignments[total_pairs].unmeth);
-        if(read->core.flag & BAM_FPAIRED) {
+        if(read->core.flag & BAM_FPAIRED && !(read->core.flag & BAM_FMUNMAP)) {
             assert(bam_read1(fp,read)>1);
+            alignments[total_pairs].tid2 = get_tid(read);
             alignments[total_pairs].start2 = get_pos(read);
             alignments[total_pairs].total_phred += total_phred(read);
             calls2uint(read, alignments[total_pairs].meth, alignments[total_pairs].unmeth);

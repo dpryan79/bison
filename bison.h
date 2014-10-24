@@ -33,7 +33,7 @@
 
 #define MAXREAD 1024
 #define MASTER 0
-#define VERSION "0.3.2b"
+#define VERSION "0.3.3"
 #define BT2BUF_SZ 256 * 1024
 #define THROTTLE_CHECK_INTERVAL 100000 //When bison_herd auto-throttles, this specifies how frequently it should check whether it should do so (units are "reads")
 #define version() printf("Bison, version %s\n", VERSION)
@@ -84,6 +84,9 @@ FILE *unmapped1;
 FILE *unmapped2;
 bamFile OUTPUT_BAM;
 unsigned long long t_reads; //total number of reads
+unsigned long long t_concordant; //Total concordant pairs
+unsigned long long t_discordant; //Total discordant pairs
+unsigned long long t_singletons; //Total singletons
 unsigned long long m_reads_OT; //total number mapped to the OT strand
 unsigned long long m_reads_OB;
 unsigned long long m_reads_CTOT;
@@ -616,7 +619,7 @@ void * herd_master_processer_thread(void*); //master.c under herd/
 *   char *seq: The unconverted fastq read
 *
 *******************************************************************************/
-int process_single(bam1_t *, bam1_t *, bam1_t *, bam1_t *, char *); //master.c
+int32_t process_single(bam1_t *, bam1_t *, bam1_t *, bam1_t *, char *); //master.c
 
 /******************************************************************************
 *
@@ -624,7 +627,7 @@ int process_single(bam1_t *, bam1_t *, bam1_t *, bam1_t *, char *); //master.c
 *   buffered reads. i denotes the read#1 of interest (read #2 is the next read)
 *
 *******************************************************************************/
-int process_paired(bam1_t **, bam1_t **, bam1_t **, bam1_t **, char **); //master.c
+int32_t process_paired(bam1_t **, bam1_t **, bam1_t **, bam1_t **, char **); //master.c
 
 /*******************************************************************************
 *

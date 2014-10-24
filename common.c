@@ -117,9 +117,11 @@ void read_genome() {
         if(!config.quiet) printf("Finished %s\n", fullpath);
         fflush(stdout);
         fclose(fp);
+        free(files[j]);
     }
     free(line);
     free(fullpath);
+    free(files);
 }
 
 /******************************************************************************

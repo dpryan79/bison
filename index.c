@@ -48,6 +48,7 @@ void * bt2_build(void *a) {
     printf("Now executing: %s\n", cmd);
     rv = system(cmd);
     if(rv) printf("%s returned with status %i!\n", cmd, rv);
+    free(cmd);
     return NULL;
 }
 
@@ -156,6 +157,7 @@ int main(int argc, char *argv[]) {
         sprintf(fullpath, "%s%s",basedir,files[i]->d_name);
         convert(fullpath, CT, GA);
     }
+    for(i=0; i<nfiles; i++) free(files[i]);
     free(files);
     if(fullpath != NULL) free(fullpath);
     free(basedir);

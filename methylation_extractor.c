@@ -331,7 +331,7 @@ int extractor_process_single(bam1_t *read, Sites *sites) {
             if(CTOT[3] != 0) {
                 if(end > CTOT[3]) end = CTOT[3];
             }
-        } else if(strcmp(XR, "CT") == 0 && strcmp(XG, "CT") == 0) { //CTOT
+        } else if(strcmp(XR, "CT") == 0 && strcmp(XG, "GA") == 0) { //CTOB
             if(CTOB[2] != 0) start = CTOB[2];
             if(CTOB[3] != 0) {
                 if(end > CTOB[3]) end = CTOB[3];
@@ -841,6 +841,7 @@ int main(int argc, char *argv[]) {
     bam1_t *read1 = bam_init1(), *read2 = bam_init1();
     struct of_struct *of = calloc(1, sizeof(struct of_struct));
     unsigned int r1_pos = 0, r2_pos = 0, total_reads = 0;
+    int32_t tid1, tid2;
     Sites *sites = init_sites();
 
     CpGlist = init_list();
@@ -941,7 +942,7 @@ int main(int argc, char *argv[]) {
 #else
     while(sam_read1(fp, global_header, read1) > 1) {
 #endif
-        if(read1->core.flag & BAM_FPAIRED) {
+        if(read1->core.flag & BAM_FPAIRED && !(read1->core.flag& BAM_FMUNMAP)) {
 #ifndef HTSLIB
             samread(fp, read2);
 #else
@@ -949,9 +950,13 @@ int main(int argc, char *argv[]) {
 #endif
             r1_pos = read1->core.pos+1;
             r2_pos = read2->core.pos+1;
+            tid1 = read1->core.tid;
+            tid2 = read2->core.tid;
         } else {
             r1_pos = read1->core.pos+1;
             r2_pos = INT_MAX;
+            tid1 = read1->core.tid;
+            tid2 = -1;
         }
         if(read1->core.flag & BAM_FDUP) continue;
         if(read1->core.qual < min_MAPQ) continue;
@@ -960,6 +965,9 @@ int main(int argc, char *argv[]) {
         //Are the reads even overlapping? If not, this is easy.
         if(r2_pos == INT_MAX) { //Unpaired read
             if(!extractor_process_single(read1, sites)) { printf("Error!\n"); break; }
+        } else if(tid1 != tid2) { //Singletons
+            if(!extractor_process_single(read1, sites)) { printf("Error!\n"); break; }
+            if(!extractor_process_single(read2, sites)) { printf("Error!\n"); break; }
         } else if(r1_pos < r2_pos && r1_pos + read1->core.l_qseq - 1 < r2_pos) { //No Overlap
             if(!extractor_process_single(read1, sites)) { printf("Error!\n"); break; }
             if(!extractor_process_single(read2, sites)) { printf("Error!\n"); break; }

@@ -392,13 +392,19 @@ void * send_store_fastq(void *a) {
 
 #ifndef NOTHROTTLE
             if(config.reads_in_queue > 0) {
-                if(total % THROTTLE_CHECK_INTERVAL == 0) {
-                    while(total - nwritten[current_file] > config.reads_in_queue) sleep(1);
+                if(config.paired) {
+                    if((2*total) % THROTTLE_CHECK_INTERVAL == 0) {
+                        while(2*total - nwritten[current_file] > 2*config.reads_in_queue) sleep(1);
+                    }
+                } else {
+                    if(total % THROTTLE_CHECK_INTERVAL == 0) {
+                        while(total - nwritten[current_file] > config.reads_in_queue) sleep(1);
+                    }
                 }
             }
 #endif
         }
-        flengths[current_file] = total; //Otherwise, the writer thread will keep waiting
+        flengths[current_file] = total*((config.paired)?2:1); //Otherwise, the writer thread will keep waiting
         //Notify the master_processor_threads that they need to update the methylation metrics
         for(j=0; j<nnode_groups; j++) { //This is actually excessive, but we otherwise need to
             finished_signal = malloc(2*sizeof(char)); //We need to malloc() this or it won't be properly free()d after being added to the linked-list.
@@ -470,6 +476,12 @@ finish: //We'll only ever "goto" here on an error, otherwise we'll get here norm
     free(read->seq2);
     free(read->qual2);
     free(read);
+    free(f1->buf);
+    free(f1);
+    if(config.paired) {
+        free(f2->buf);
+        free(f2);
+    }
     wordfree(&fnames1_wordexp);
     if(config.paired) wordfree(&fnames2_wordexp);
     if(!config.quiet) printf("Finished reading in fastq files!\n"); fflush(stdout);

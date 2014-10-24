@@ -150,15 +150,15 @@ void * slurp_fastq(void *a) {
     MPI_Status status;
     fastq *read = malloc(sizeof(fastq));
 
-    first_writer = malloc(sizeof(struct packed_struct));
-    first_writer_sentinel = malloc(sizeof(struct packed_struct));
+//    first_writer = malloc(sizeof(struct packed_struct));
+//    first_writer_sentinel = malloc(sizeof(struct packed_struct));
     first_writer = initialize_list(first_writer);
     first_writer_sentinel = first_writer->next;
     pthread_create(&(threads[0]), NULL, &first_writer_func, a);
     if(config.paired) {
         //If we have pairs, then writing simultaneuosly to two fifos (that will be read sequentially by bowtie2) won't work, since bowtie2 will read from a single fifo multiple times!!!
-        second_writer = malloc(sizeof(struct packed_struct));
-        second_writer_sentinel = malloc(sizeof(struct packed_struct));
+//        second_writer = malloc(sizeof(struct packed_struct));
+//        second_writer_sentinel = malloc(sizeof(struct packed_struct));
         second_writer = initialize_list(second_writer);
         second_writer_sentinel = second_writer->next;
         pthread_create(&(threads[1]), NULL, &second_writer_func, a);
@@ -256,6 +256,7 @@ void herd_worker_node(int thread_id, char *fastq1, char *fastq2) {
     int i = 0;
 #endif
     time_t t0, t1;
+    int swapped = 0;
 
     //Which strand should we be aligning to?
     if(config.directional) {
@@ -268,7 +269,7 @@ void herd_worker_node(int thread_id, char *fastq1, char *fastq2) {
     packed_read->packed = NULL;
 
     //construct the bowtie2 command
-    cmd_length += (int) strlen("bowtie2 -q --reorder --no-mixed --no-discordant") + 1;
+    cmd_length += (int) strlen("bowtie2 -q --reorder") + 1;
     cmd_length += (int) strlen(config.bowtie2_options) + 1;
     cmd_length += (int) strlen("--norc -x") + 1;
     cmd_length += (int) strlen(config.genome_dir) + strlen("bisulfite_genome/CT_conversion/BS_CT") + 1;
@@ -286,27 +287,27 @@ void herd_worker_node(int thread_id, char *fastq1, char *fastq2) {
     cmd = (char *) malloc(sizeof(char) * cmd_length);
     if(strand == 0) { //OT Read#1 C->T, Read#2 G->A, Genome C->T only the + strand
         if(config.paired) {
-            sprintf(cmd, "bowtie2 -q --reorder --no-mixed --no-discordant %s --norc -x %sbisulfite_genome/CT_conversion/BS_CT -1 %s -2 %s", config.bowtie2_options, config.genome_dir, fastq1, fastq2);
+            sprintf(cmd, "bowtie2 -q --reorder %s --norc -x %sbisulfite_genome/CT_conversion/BS_CT -1 %s -2 %s", config.bowtie2_options, config.genome_dir, fastq1, fastq2);
         } else {
-            sprintf(cmd, "bowtie2 -q --reorder --no-mixed --no-discordant %s --norc -x %sbisulfite_genome/CT_conversion/BS_CT -U %s", config.bowtie2_options, config.genome_dir, fastq1);
+            sprintf(cmd, "bowtie2 -q --reorder %s --norc -x %sbisulfite_genome/CT_conversion/BS_CT -U %s", config.bowtie2_options, config.genome_dir, fastq1);
         }
     } else if(strand == 1) { //OB Read#1 C->T, Read#2 G->A, Genome G->A only the - strand
         if(config.paired) {
-            sprintf(cmd, "bowtie2 -q --reorder --no-mixed --no-discordant %s --nofw -x %sbisulfite_genome/GA_conversion/BS_GA -1 %s -2 %s", config.bowtie2_options, config.genome_dir, fastq1, fastq2);
+            sprintf(cmd, "bowtie2 -q --reorder %s --nofw -x %sbisulfite_genome/GA_conversion/BS_GA -1 %s -2 %s", config.bowtie2_options, config.genome_dir, fastq1, fastq2);
         } else {
-            sprintf(cmd, "bowtie2 -q --reorder --no-mixed --no-discordant %s --nofw -x %sbisulfite_genome/GA_conversion/BS_GA -U %s", config.bowtie2_options, config.genome_dir, fastq1);
+            sprintf(cmd, "bowtie2 -q --reorder %s --nofw -x %sbisulfite_genome/GA_conversion/BS_GA -U %s", config.bowtie2_options, config.genome_dir, fastq1);
         }
     } else if(strand == 2) { //CTOT Read#1 G->A, Read#2 C->T, Genome C->T, only the - strand
         if(config.paired) {
-            sprintf(cmd, "bowtie2 -q --reorder --no-mixed --no-discordant %s --nofw -x %sbisulfite_genome/CT_conversion/BS_CT -1 %s -2 %s", config.bowtie2_options, config.genome_dir, fastq1, fastq2);
+            sprintf(cmd, "bowtie2 -q --reorder %s --nofw -x %sbisulfite_genome/CT_conversion/BS_CT -1 %s -2 %s", config.bowtie2_options, config.genome_dir, fastq1, fastq2);
         } else {
-            sprintf(cmd, "bowtie2 -q --reorder --no-mixed --no-discordant %s --nofw -x %sbisulfite_genome/CT_conversion/BS_CT -U %s", config.bowtie2_options, config.genome_dir, fastq1);
+            sprintf(cmd, "bowtie2 -q --reorder %s --nofw -x %sbisulfite_genome/CT_conversion/BS_CT -U %s", config.bowtie2_options, config.genome_dir, fastq1);
         }
     } else if(strand == 3) { //CTOB Read#1 G->A, Read#2 C->T, Genome G->A, only the + strand
         if(config.paired) {
-            sprintf(cmd, "bowtie2 -q --reorder --no-mixed --no-discordant %s --norc -x %sbisulfite_genome/GA_conversion/BS_GA -1 %s -2 %s", config.bowtie2_options, config.genome_dir, fastq1, fastq2);
+            sprintf(cmd, "bowtie2 -q --reorder %s --norc -x %sbisulfite_genome/GA_conversion/BS_GA -1 %s -2 %s", config.bowtie2_options, config.genome_dir, fastq1, fastq2);
         } else {
-            sprintf(cmd, "bowtie2 -q --reorder --no-mixed --no-discordant %s --norc -x %sbisulfite_genome/GA_conversion/BS_GA -U %s", config.bowtie2_options, config.genome_dir, fastq1);
+            sprintf(cmd, "bowtie2 -q --reorder %s --norc -x %sbisulfite_genome/GA_conversion/BS_GA -U %s", config.bowtie2_options, config.genome_dir, fastq1);
         }
     } else {
         printf("Oh shit, got strand %i!\n", strand);
@@ -371,6 +372,26 @@ void herd_worker_node(int thread_id, char *fastq1, char *fastq2) {
             strcpy(last_qname, bam1_qname(read1));
         }
 
+        //Are paired-end reads in the wrong order?
+        swapped = 0;
+        if(config.paired) {
+            if(read1->core.flag & BAM_FREAD2) {
+                swapped = 1;
+                sam_read1(fp, header, read2);
+                packed_read = pack_read(read2, packed_read);
+#ifndef DEBUG
+                MPI_Send((void *) packed_read->packed, packed_read->size, MPI_BYTE, 0, 5, MPI_COMM_WORLD);
+#else
+                bam_write1(of, read2);
+                if(packed_read->size > current_p_size) p = realloc(p, packed_read->size);
+                MPI_Isend((void *) packed_read->packed, packed_read->size, MPI_BYTE, 0, 5, MPI_COMM_WORLD, &request);
+                status = MPI_Recv(p, packed_read->size, MPI_BYTE, 0, 5, MPI_COMM_WORLD, &stat);
+                MPI_Wait(&request, &stat);
+                debug_read = unpack_read(debug_read, p);
+#endif
+            }
+        }
+
         //Send the read
         packed_read = pack_read(read1, packed_read);
 #ifndef DEBUG
@@ -382,7 +403,7 @@ void herd_worker_node(int thread_id, char *fastq1, char *fastq2) {
         MPI_Wait(&request, &stat);
 #endif
         //Deal with paired-end reads
-        if(config.paired) {
+        if(config.paired && !swapped) {
             sam_read1(fp, header, read2);
             packed_read = pack_read(read2, packed_read);
 #ifndef DEBUG
