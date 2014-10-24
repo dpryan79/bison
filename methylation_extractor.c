@@ -331,7 +331,7 @@ int extractor_process_single(bam1_t *read, Sites *sites) {
             if(CTOT[3] != 0) {
                 if(end > CTOT[3]) end = CTOT[3];
             }
-        } else if(strcmp(XR, "CT") == 0 && strcmp(XG, "CT") == 0) { //CTOT
+        } else if(strcmp(XR, "CT") == 0 && strcmp(XG, "GA") == 0) { //CTOB
             if(CTOB[2] != 0) start = CTOB[2];
             if(CTOB[3] != 0) {
                 if(end > CTOB[3]) end = CTOB[3];
