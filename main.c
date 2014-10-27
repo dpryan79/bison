@@ -40,6 +40,11 @@ void usage(char *prog) {
             maximum value for this parameter is whatever an unsigned long is on\n\
             your system.\n\
 \n\
+--no-discordant Suppress discordant alignments. This is actually a bowtie2\n\
+            option.\n\
+\n\
+--no-mixed  Suppress singleton alignments. This is actually a bowtie2 option.\n\
+\n\
 --unmapped  Save unaligned reads to a file or files (as appropriate).\n\
 \n\
 --genome-size Many of the bison tools need to read the genome into memory. By\n\

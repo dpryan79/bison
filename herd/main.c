@@ -72,6 +72,11 @@ void usage(char *prog) {
             in samtools. The default is 1, but this may need to be increased as\n\
             you increase the number of alotted nodes.\n\
 \n\
+--no-discordant Suppress discordant alignments. This is actually a bowtie2\n\
+            option.\n\
+\n\
+--no-mixed  Suppress singleton alignments. This is actually a bowtie2 option.\n\
+\n\
 --unmapped  Save unaligned reads to a file or files (as appropriate). This files\n\
             will be placed in the same directory as the source fastq files,\n\
             regardless of whether \"-o\" is used.\n\
