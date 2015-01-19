@@ -1,6 +1,7 @@
 #include "bison.h"
 #include <math.h>
 #include <sys/time.h>
+#include <ctype.h>
 
 typedef struct {
     unsigned long long t_reads; //total reads
@@ -294,6 +295,8 @@ void swap_sequence(bam1_t *read, char *seq) {
     uint8_t *sequence = bam1_seq(read), val;
     char *seq2 = strdup(seq);
     int i, j;
+
+    for(i=0; i<strlen(seq2); i++) seq2[i] = toupper(seq2[i]); //Ensure everything is upper case
 
     //Do we need to reverse complement?
     if(read->core.flag & BAM_FREVERSE) reverse_complement(seq2);
