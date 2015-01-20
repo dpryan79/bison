@@ -502,7 +502,7 @@ int main(int argc, char *argv[]) {
     fp = sam_open(iname, "rb");
     header = sam_hdr_read(fp);
     of = sam_open(oname, "wb");
-    if(n_compression_threads > 1) bgzf_mt(of->fp.bgzf, n_compression_threads, 256);
+    if(n_compression_threads > 1) hts_set_threads(of, n_compression_threads);
     sam_hdr_write(of, header);
 
     while(sam_read1(fp, header, read) > 1) {
