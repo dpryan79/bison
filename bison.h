@@ -14,6 +14,7 @@
 #include "htslib/sam.h"
 #include "htslib/hfile.h"
 #include "htslib/bgzf.h"
+#include "htslib/hts.h"
 
 #include <limits.h>
 #include <inttypes.h>
@@ -103,6 +104,7 @@ typedef struct {
     char *unmapped2;
     char *genome_dir;
     char *basename;
+    char *fai;
     char *odir;
     char *tmpdir;
     char *bowtie2_options;
@@ -124,6 +126,7 @@ typedef struct {
 #endif
     float scoremin_intercept;
     float scoremin_coef;
+    int isCRAM;
 } t_config;
 
 typedef struct {

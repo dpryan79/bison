@@ -71,6 +71,7 @@ void quit(int FLAG, int rv) {
         }
         free(config.basename);
         free(config.outname);
+        if(config.fai) free(config.fai);
     }
 
     if(taskid == MASTER) {

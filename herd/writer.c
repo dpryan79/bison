@@ -38,8 +38,9 @@ void herd_setup(char *fname1, char *fname2) {
     char *cmd = NULL;
     if(config.basename) free(config.basename);
     config.basename = get_basename(fname1);
-    config.outname = realloc(config.outname, sizeof(char)*(strlen(config.odir)+ strlen(config.basename)+5));
-    sprintf(config.outname, "%s%s.bam", config.odir, config.basename);
+    config.outname = realloc(config.outname, sizeof(char)*(strlen(config.odir)+ strlen(config.basename)+6));
+    if(config.isCRAM) sprintf(config.outname, "%s%s.cram", config.odir, config.basename);
+    else sprintf(config.outname, "%s%s.bam", config.odir, config.basename);
     //Open the output file handles
     if(config.unmapped) {
         create_fastq_names(fname1, fname2);
@@ -57,7 +58,12 @@ void herd_setup(char *fname1, char *fname2) {
     }
 
     //Open a file for output
-    OUTPUT_BAM = sam_open(config.outname, "wb");
+    if(!config.isCRAM) OUTPUT_BAM = sam_open(config.outname, "wb");
+    else {
+        OUTPUT_BAM = sam_open(config.outname, "wc");
+        hts_set_fai_filename(OUTPUT_BAM, config.fai);
+    }
+
     if(OUTPUT_BAM == NULL) {
         fprintf(stderr, "Could not open %s for writing!\n", config.outname);
         quit(2,-1);

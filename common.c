@@ -59,7 +59,6 @@ int filter(const struct dirent *file) {
 *
 *******************************************************************************/
 void read_genome() {
-//    DIR *dir = opendir(config.genome_dir);
     FILE *fp;
     char *p, *line = malloc(sizeof(char)*MAXREAD), *fullpath = NULL;
     char *g = chromosomes.genome;
@@ -74,6 +73,7 @@ void read_genome() {
         //This is a fasta file that we need to read into the genome array and append a chromosome_struct onto chromosomes_struct
         fullpath = realloc(fullpath, sizeof(char)*(strlen(config.genome_dir)+strlen(files[j]->d_name)+1));
         sprintf(fullpath, "%s%s",config.genome_dir,files[j]->d_name);
+        if(config.isCRAM && j==0) config.fai = strdup(fullpath);
         fp = fopen(fullpath, "r");
         if(!config.quiet) fprintf(stderr, "Reading in %s\n", fullpath);
         fflush(stderr);

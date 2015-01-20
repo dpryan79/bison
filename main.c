@@ -22,6 +22,8 @@ void usage(char *prog) {
 \n\
 -p          How many threads bowtie2 should use on each node. Default is 12.\n\
 \n\
+-C          Output CRAM rather than BAM.\n\
+\n\
 -o          Output directory. By default, everything will be written to the\n\
             directory holding the fastq files (or the file containing read #1,\n\
             as appropriate). If you would prefer for the output BAM file and\n\
@@ -116,6 +118,8 @@ int main(int argc, char *argv[]) {
     config.FASTQ1 = NULL;
     config.FASTQ2 = NULL;
     config.genome_dir = NULL;
+    config.isCRAM = 0;
+    config.fai = NULL;
     chromosomes.max_genome = 3000000000;
     chromosomes.nchromosomes = 0; //We need to initialize the struct
 
@@ -164,6 +168,8 @@ int main(int argc, char *argv[]) {
         } else if(strcmp(argv[i], "-p") == 0) {
             i++;
             config.nthreads = atoi(argv[i]);
+        } else if(strcmp(argv[i], "-C") == 0) {
+            config.isCRAM = 1;
         } else if(strcmp(argv[i], "-o") == 0) {
             i++;
             config.odir = strdup(argv[i]);
@@ -278,8 +284,9 @@ int main(int argc, char *argv[]) {
 #endif
         //MASTER specific procedures
         config.basename = get_basename(config.FASTQ1);
-        config.outname = malloc(sizeof(char)*(strlen(config.odir)+ strlen(config.basename)+5));
-        sprintf(config.outname, "%s%s.bam", config.odir, config.basename);
+        config.outname = malloc(sizeof(char)*(strlen(config.odir)+ strlen(config.basename)+6));
+        if(config.isCRAM) sprintf(config.outname, "%s%s.cram", config.odir, config.basename);
+        else sprintf(config.outname, "%s%s.bam", config.odir, config.basename);
 #ifdef DEBUG
         //When debugging, don't convert the files if it's already been done
         if(access(config.FASTQ1CT, F_OK) == -1) {
@@ -352,7 +359,11 @@ int main(int argc, char *argv[]) {
         read_genome();
 
         //Open a file for output
-        OUTPUT_BAM = sam_open(config.outname, "wb");
+        if(!config.isCRAM) OUTPUT_BAM = sam_open(config.outname, "wb");
+        else {
+            OUTPUT_BAM = sam_open(config.outname, "wc");
+            hts_set_fai_filename(OUTPUT_BAM, config.fai);
+        }
         if(OUTPUT_BAM == NULL) {
             fprintf(stderr, "Could not open %s for writing!\n", config.outname);
             quit(2,-1);

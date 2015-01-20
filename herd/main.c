@@ -40,6 +40,8 @@ void usage(char *prog) {
             mind also that there are an additional 2 threads already running to\n\
             do other things.\n\
 \n\
+-C          Output CRAM rather than BAM format.\n\
+\n\
 -o          Output directory. By default, everything will be written to the\n\
             directory holding the fastq files (or the file containing read #1,\n\
             as appropriate). If you would prefer for the output BAM file and\n\
@@ -167,6 +169,8 @@ int main(int argc, char *argv[]) {
     config.unmapped1 = NULL;
     config.unmapped2 = NULL;
     config.genome_dir = NULL;
+    config.isCRAM = 0;
+    config.fai = NULL;
     global_header = NULL;
     unmapped1 = NULL;
     unmapped2 = NULL;
@@ -231,6 +235,8 @@ int main(int argc, char *argv[]) {
         } else if(strcmp(argv[i], "-mp") == 0) {
             i++;
             config.nmthreads = atoi(argv[i]);
+        } else if(strcmp(argv[i], "-C") == 0) {
+            config.isCRAM = 1;
         } else if(strcmp(argv[i], "-o") == 0) {
             i++;
             config.odir = strdup(argv[i]);
