@@ -235,19 +235,15 @@ void herd_worker_node(int thread_id, char *fastq1, char *fastq2) {
     char *cmd, *last_qname = calloc(1, sizeof(char));
     MPI_Header *packed_header;
     MPI_read *packed_read = calloc(1, sizeof(MPI_read));
-    bam_header_t *header;
+    bam_hdr_t *header;
     bam1_t *read1 = bam_init1();
     bam1_t *read2 = bam_init1();
-#ifndef HTSLIB
-    tamFile fp;
-#else
     samFile *fp;
-#endif
 #ifdef DEBUG
     MPI_Status stat;
     int current_p_size = 100;
     bamFile of;
-    bam_header_t *debug_header = bam_header_init();
+    bam_hdr_t *debug_header = bam_hdr_init();
     bam1_t *debug_read = bam_init1();
     global_header = bam_header_init();
     void *p = calloc(100,1);
@@ -279,7 +275,7 @@ void herd_worker_node(int thread_id, char *fastq1, char *fastq2) {
 #ifdef DEBUG
     oname = malloc(sizeof(char) *(1+strlen(config.odir)+strlen(config.basename)+strlen("_X.bam")));
     sprintf(oname, "%s%s_%i.bam", config.odir, config.basename, thread_id);
-    if(!config.quiet) printf("Writing output to %s\n", oname);
+    if(!config.quiet) fprintf(stderr, "Writing output to %s\n", oname);
     of = bam_open(oname, "w");
     free(oname);
 #endif
@@ -310,16 +306,16 @@ void herd_worker_node(int thread_id, char *fastq1, char *fastq2) {
             sprintf(cmd, "bowtie2 -q --reorder %s --norc -x %sbisulfite_genome/GA_conversion/BS_GA -U %s", config.bowtie2_options, config.genome_dir, fastq1);
         }
     } else {
-        printf("Oh shit, got strand %i!\n", strand);
+        fprintf(stderr, "Oh shit, got strand %i!\n", strand);
         return;
     }
 
     //Start the process
-    if(!config.quiet) printf("Node %i executing: %s\n", thread_id, cmd); fflush(stdout);
+    if(!config.quiet) fprintf(stderr, "Node %i executing: %s\n", thread_id, cmd); fflush(stderr);
     fp = sam_popen(cmd);
-    header = sam_header_read(fp);
+    header = sam_hdr_read(fp);
 #ifdef DEBUG
-    bam_header_write(of, header);
+    bam_hdr_write(of, header);
 #endif
 
 #ifndef DEBUG
@@ -329,8 +325,8 @@ void herd_worker_node(int thread_id, char *fastq1, char *fastq2) {
         MPI_Send((void *) &(packed_header->size), 1, MPI_INT, 0, 1, MPI_COMM_WORLD);
         status = MPI_Send((void *) packed_header->packed, packed_header->size, MPI_BYTE, 0, 2, MPI_COMM_WORLD);
         if(status != MPI_SUCCESS) {
-            printf("MPI_Send returned %i\n", status);
-            fflush(stdout);
+            fprintf(stderr, "MPI_Send returned %i\n", status);
+            fflush(stderr);
         }
     }
 #else
@@ -339,7 +335,7 @@ void herd_worker_node(int thread_id, char *fastq1, char *fastq2) {
     MPI_Request request;
     MPI_Isend((void *) packed_header->packed, packed_header->size, MPI_BYTE, 0, 2, MPI_COMM_WORLD, &request);
     status = MPI_Recv(tmp_pointer, packed_header->size, MPI_BYTE, 0, 2, MPI_COMM_WORLD, &stat);
-    if(status != MPI_SUCCESS) printf("We seem to have not been able to send the message to ourselves!\n");
+    if(status != MPI_SUCCESS) fprintf(stderr, "We seem to have not been able to send the message to ourselves!\n");
     MPI_Wait(&request, &stat);
     unpack_header(debug_header, tmp_pointer);
     global_header = debug_header;
@@ -347,16 +343,12 @@ void herd_worker_node(int thread_id, char *fastq1, char *fastq2) {
 #endif
 
     t0 = time(NULL);
-    if(!config.quiet) printf("Node %i began sending reads @%s", thread_id, ctime(&t0)); fflush(stdout);
-#ifndef HTSLIB
-    while(sam_read1(fp, header, read1) > 1) {
-#else
+    if(!config.quiet) fprintf(stderr, "Node %i began sending reads @%s", thread_id, ctime(&t0)); fflush(stderr);
     while(sam_read1(fp, header, read1) >= 0) {
-#endif
 #ifdef DEBUG
         bam_write1(of, read1);
 #endif
-        if(strcmp(bam1_qname(read1), last_qname) == 0) { //Multimapper
+        if(strcmp(bam_get_qname(read1), last_qname) == 0) { //Multimapper
             if(config.paired) {
                 sam_read1(fp, header, read2);
 #ifdef DEBUG
@@ -369,7 +361,7 @@ void herd_worker_node(int thread_id, char *fastq1, char *fastq2) {
                 max_qname = read1->core.l_qname + 10;
                 last_qname = realloc(last_qname, sizeof(char) * max_qname);
             }
-            strcpy(last_qname, bam1_qname(read1));
+            strcpy(last_qname, bam_get_qname(read1));
         }
 
         //Are paired-end reads in the wrong order?
@@ -422,7 +414,7 @@ void herd_worker_node(int thread_id, char *fastq1, char *fastq2) {
 #endif
     }
     t1 = time(NULL);
-    if(!config.quiet) printf("Node %i finished sending reads @%s\t(%f sec elapsed)\n", thread_id, ctime(&t1), difftime(t1, t0)); fflush(stdout);
+    if(!config.quiet) fprintf(stderr, "Node %i finished sending reads @%s\t(%f sec elapsed)\n", thread_id, ctime(&t1), difftime(t1, t0)); fflush(stderr);
 
     //Notify the master node
     packed_read->size = 0;
@@ -433,7 +425,7 @@ void herd_worker_node(int thread_id, char *fastq1, char *fastq2) {
 #endif
 
     //Close things up
-    bam_header_destroy(header);
+    bam_hdr_destroy(header);
     bam_destroy1(read1);
     bam_destroy1(read2);
     free(cmd);
@@ -448,9 +440,9 @@ void herd_worker_node(int thread_id, char *fastq1, char *fastq2) {
     if(config.paired) unlink(fastq2);
 #ifdef DEBUG
     bam_close(of);
-    bam_header_destroy(debug_header);
+    bam_hdr_destroy(debug_header);
     bam_destroy1(debug_read);
     free(p);
 #endif
-    if(!config.quiet) printf("Exiting worker node %i\n", thread_id); fflush(stdout);
+    if(!config.quiet) fprintf(stderr, "Exiting worker node %i\n", thread_id); fflush(stderr);
 };

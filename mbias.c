@@ -9,7 +9,7 @@ int min_phred = 5;
 
 void store_calls(unsigned long long *m, unsigned long long *um, bam1_t *read, int reversed) {
     char *meth = bam_aux2Z(bam_aux_get(read, "XM"));
-    uint8_t *qual = bam1_qual(read);
+    uint8_t *qual = bam_get_qual(read);
     int i;
 
     if(!reversed) {
@@ -45,12 +45,12 @@ void usage(char *prog) {
 }
 
 int main(int argc, char *argv[]) {
-    bamFile ifile = NULL;
+    htsFile *ifile = NULL;
     FILE *ofile = NULL;
     char *prefix = NULL;
     char *p, *XR, *XG;
     bam1_t *read = bam_init1();
-    bam_header_t *header = NULL;
+    bam_hdr_t *header = NULL;
     int max_length = 50;
     int paired = 0, reversed = 0, hasComp = 0;
     int i, j, min_mapq = 10, pdf = 0;
@@ -71,21 +71,21 @@ int main(int argc, char *argv[]) {
             usage(argv[0]);
             return 0;
         } else if(prefix == NULL) {
-            ifile = bam_open(argv[i], "r");
-            header = bam_header_read(ifile);
+            ifile = sam_open(argv[i], "rb");
+            header = sam_hdr_read(ifile);
             prefix = strdup(argv[i]);
         } else {
-            printf("Unknown option: %s", argv[i]);
+            fprintf(stderr, "Unknown option: %s", argv[i]);
             free(prefix);
-            bam_header_destroy(header);
-            bam_close(ifile);
+            bam_hdr_destroy(header);
+            sam_close(ifile);
             usage(argv[0]);
             return -1;
         }
     }
 
     if(prefix == NULL) {
-        printf("No BAM file specified!\n");
+        fprintf(stderr, "No BAM file specified!\n");
         usage(argv[0]);
         return -1;
     }
@@ -105,8 +105,8 @@ int main(int argc, char *argv[]) {
     sprintf(prefix, "%s_mbias.txt", prefix);
     ofile = fopen(prefix, "w");
 
-    while(bam_read1(ifile, read) > 1) {
-        if(++treads % 10000000 == 0) printf("Processed %llu reads\n", treads);
+    while(sam_read1(ifile, header, read) > 1) {
+        if(++treads % 10000000 == 0) fprintf(stderr, "Processed %llu reads\n", treads);
         if(read->core.qual < min_mapq) continue;
         if(read->core.flag & BAM_FUNMAP) continue;
 
@@ -129,15 +129,11 @@ int main(int argc, char *argv[]) {
         reversed = (read->core.flag & BAM_FREVERSE) ? 1 : 0;
 
         if(bam_aux_get(read, "XR") == NULL || bam_aux_get(read, "XG") == NULL) { 
-#ifndef HTSLIB
-            printf("%s\n", bam_format1(header, read));
-#else
             kstring_t str;
             str.l = str.m = 0; str.s = NULL;
             sam_format1(header, read, &str);
-            printf("%s\n", str.s);
+            fprintf(stderr, "Error: Couldn't retrieve strand information for %s\n", str.s);
             free(str.s);
-#endif
         }
         XR = bam_aux2Z(bam_aux_get(read, "XR"));
         XG = bam_aux2Z(bam_aux_get(read, "XG"));
@@ -206,17 +202,17 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    printf("Processed %llu reads\n", treads);
+    fprintf(stderr, "Processed %llu reads\n", treads);
     fclose(ofile);
 
     if(pdf) {
         char *cmd = malloc(sizeof(char) * (strlen("bison_mbias2pdf ") + strlen(prefix) + 1));
         sprintf(cmd, "bison_mbias2pdf %s", prefix);
-        printf("Executing %s\n", cmd);
-        if(system(cmd) == -1) printf("N.B. an error occured while running bison_mbias2pdf!\n");
+        fprintf(stderr, "Executing %s\n", cmd);
+        if(system(cmd) == -1) fprintf(stderr, "N.B. an error occured while running bison_mbias2pdf!\n");
         free(cmd);
     } else {
-        printf("The output may be converted to PDF with recommended inclusion bounds by running bison_mbias2pdf %s\n", prefix);
+        fprintf(stderr, "The output may be converted to PDF with recommended inclusion bounds by running bison_mbias2pdf %s\n", prefix);
     }
 
     //Cleanup
@@ -227,8 +223,8 @@ int main(int argc, char *argv[]) {
         free(r2_m[i]);
         free(r2_um[i]);
     }
-    bam_header_destroy(header);
+    bam_hdr_destroy(header);
     bam_destroy1(read);
-    bam_close(ifile);
+    sam_close(ifile);
     return(0);
 }

@@ -30,7 +30,6 @@ void move_element(struct packed_struct *source, struct packed_struct *dest) {
     struct packed_struct *element = source->next;
     struct packed_struct *new_next = NULL;
 
-//    printf("Moving %s\n", (char*) ((bam1_t*)element->packed)->data); fflush(stdout);
     //Remove from source
     new_next = source->next->next; //the next read
     source->next->previous = dest->previous; //Ensure that the read knows who came before it
@@ -79,26 +78,26 @@ void *herd_slurp(void *a) {
     int source = 0;
     int size = 0;
     struct packed_struct *target_node = NULL;
-    bam_header_t *tmp_header;
+    bam_hdr_t *tmp_header;
     MPI_Status status;
     if(MPI_Recv((void *) &size, 1, MPI_INT, 1, 1, MPI_COMM_WORLD, &status) != MPI_SUCCESS) {
-        printf("Received an error when trying to receive header size.\n");
-        fflush(stdout);
+        fprintf(stderr, "Received an error when trying to receive header size.\n");
+        fflush(stderr);
         quit(3, -2);
     }
     p = malloc((size_t) size);
     if(MPI_Recv(p, size, MPI_BYTE, 1, 2, MPI_COMM_WORLD, &status) != MPI_SUCCESS) {
-        printf("Received an error when trying to receive header.\n");
-        fflush(stdout);
+        fprintf(stderr, "Received an error when trying to receive header.\n");
+        fflush(stderr);
         quit(3, -2);
     }
-    tmp_header= bam_header_init();
+    tmp_header= bam_hdr_init();
     unpack_header(tmp_header, p);
     free(p);
     global_header = tmp_header; //Now the writer thread is unblocked!
     
     t0 = time(NULL);
-    if(!config.quiet) printf("Started slurping @%s", ctime(&t0)); fflush(stdout);
+    if(!config.quiet) fprintf(stderr, "Started slurping @%s", ctime(&t0)); fflush(stderr);
     while(nfinished < nnodes) {
         MPI_Probe(MPI_ANY_SOURCE, 5, MPI_COMM_WORLD, &status);
         source = status.MPI_SOURCE;
@@ -118,7 +117,7 @@ void *herd_slurp(void *a) {
         }
     }
     t1 = time(NULL);
-    if(!config.quiet) printf("Finished slurping @%s\t(%f seconds elapsed)\n", ctime(&t1), difftime(t1, t0)); fflush(stdout);
+    if(!config.quiet) fprintf(stderr, "Finished slurping @%s\t(%f seconds elapsed)\n", ctime(&t1), difftime(t1, t0)); fflush(stderr);
     return NULL;
 }
 #else
@@ -127,51 +126,51 @@ void *herd_slurp(void *a) {
     bamFile fp1, fp2, fp3, fp4, fp5, fp6, fp7, fp8;
     char *iname = malloc(sizeof(char) * (1+strlen(config.odir)+strlen(config.basename)+strlen("_X.bam")));
     bam1_t *read = bam_init1();
-    bam_header_t *tmp;
+    bam_hdr_t *tmp;
     MPI_read *packed = calloc(1, sizeof(MPI_read));
     struct packed_struct *target_node = NULL;
 
     //Open the input files and get the header
     sprintf(iname, "%s%s_1.bam", config.odir, config.basename);
     fp1 = bam_open(iname, "r");
-    global_header = bam_header_read(fp1);
+    global_header = bam_hdr_read(fp1);
     sprintf(iname, "%s%s_2.bam", config.odir, config.basename);
     fp2 = bam_open(iname, "r");
-    tmp = bam_header_read(fp2);
-    bam_header_destroy(tmp);
+    tmp = bam_hdr_read(fp2);
+    bam_hdr_destroy(tmp);
     sprintf(iname, "%s%s_3.bam", config.odir, config.basename);
     fp3 = bam_open(iname, "r");
-    tmp = bam_header_read(fp3);
-    bam_header_destroy(tmp);
+    tmp = bam_hdr_read(fp3);
+    bam_hdr_destroy(tmp);
     sprintf(iname, "%s%s_4.bam", config.odir, config.basename);
     fp4 = bam_open(iname, "r");
-    tmp = bam_header_read(fp4);
-    bam_header_destroy(tmp);
+    tmp = bam_hdr_read(fp4);
+    bam_hdr_destroy(tmp);
     sprintf(iname, "%s%s_5.bam", config.odir, config.basename);
     fp5 = bam_open(iname, "r");
-    tmp = bam_header_read(fp5);
-    bam_header_destroy(tmp);
+    tmp = bam_hdr_read(fp5);
+    bam_hdr_destroy(tmp);
     sprintf(iname, "%s%s_6.bam", config.odir, config.basename);
     fp6 = bam_open(iname, "r");
-    tmp = bam_header_read(fp6);
-    bam_header_destroy(tmp);
+    tmp = bam_hdr_read(fp6);
+    bam_hdr_destroy(tmp);
     sprintf(iname, "%s%s_7.bam", config.odir, config.basename);
     fp7 = bam_open(iname, "r");
-    tmp = bam_header_read(fp7);
-    bam_header_destroy(tmp);
+    tmp = bam_hdr_read(fp7);
+    bam_hdr_destroy(tmp);
     sprintf(iname, "%s%s_8.bam", config.odir, config.basename);
     fp8 = bam_open(iname, "r");
-    tmp = bam_header_read(fp8);
-    bam_header_destroy(tmp);
+    tmp = bam_hdr_read(fp8);
+    bam_hdr_destroy(tmp);
     free(iname);
 
 
     //Write a header
-    bam_header_write(OUTPUT_BAM, global_header);
+    bam_hdr_write(OUTPUT_BAM, global_header);
     packed->size = 0;
 
     t0 = time(NULL);
-    if(!config.quiet) printf("Started slurping @%s", ctime(&t0)); fflush(stdout);
+    if(!config.quiet) fprintf(stderr, "Started slurping @%s", ctime(&t0)); fflush(stderr);
 
     while(bam_read1(fp1, read) > 1) {
         packed->packed = NULL;
@@ -265,7 +264,7 @@ void *herd_slurp(void *a) {
     add_finished(target_node);
 
     t1 = time(NULL);
-    if(!config.quiet) printf("Finished slurping @%s\t(%f seconds elapsed)\n", ctime(&t1), difftime(t1, t0)); fflush(stdout);
+    if(!config.quiet) fprintf(stderr, "Finished slurping @%s\t(%f seconds elapsed)\n", ctime(&t1), difftime(t1, t0)); fflush(stderr);
     return NULL;
 }
 #endif

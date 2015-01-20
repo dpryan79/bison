@@ -2,52 +2,47 @@
 WORK=/home/ryand#This should be changed to match your needs
 PREFIX = $(WORK)/bin
 CC = mpicc
-HTSLIB=/home/ryand/lib/libhts.a
-INCLUDE_DIRS = -I$(WORK)/include
-LIB_DIRS = -L$(WORK)/lib
-OPTS := -Wall -g #-g -DDEBUG -DNOTHROTTLE
+HTSLIB=htslib/libhts.a #Use -lhtslib and set LIB_DIRS for dynamic linkage
+INCLUDE_DIRS = -Ihtslib
+LIB_DIRS =
+OPTS = -Wall -g #-DDEBUG #-DNOTHROTTLE
 #MPI = -lmpich -lmpl #This is usually appropriate for mpich2
 #MPI = #This is appropriate for mvapich2
 MPI = -lmpi #This is usually appropriate for openmpi
 
 #Don't edit below here unless you know what you're doing!
 
-#change linking if we're dealing with HTSlib
-ifdef HTSLIB
-	OPTS := $(OPTS) -DHTSLIB
-	LIBBAM = $(HTSLIB)
-else
-	LIBBAM = -lbam
-endif
-
 OBJS = aux.o fastq.o genome.o slurp.o master.o common.o MPI_packing.o worker.o
 HERD_OBJS = herd/fastq.o herd/master.o herd/MPI_packing.o herd/slurp.o herd/worker.o herd/writer.o
 
 .SUFFIXES:.c .o
 
-all: align index extractor mbias markduplicates
+all: HTSlib align index extractor mbias markduplicates
 
 .c.o:
 	$(CC) -c $(OPTS) $(INCLUDE_DIRS) $< -o $@
 
-markduplicates: markduplicates.o
-	$(CC) $(LIB_DIRS) -o bison_markduplicates markduplicates.o $(LIBBAM) -lpthread -lz
+HTSlib:
+	$(MAKE) -C htslib
 
-mbias: mbias.o
-	$(CC) $(LIB_DIRS) -o bison_mbias mbias.o $(LIBBAM) -lpthread -lz
+markduplicates: HTSlib markduplicates.o
+	$(CC) $(LIB_DIRS) -o bison_markduplicates markduplicates.o $(HTSLIB) -lpthread -lz
+
+mbias: HTSlib mbias.o
+	$(CC) $(LIB_DIRS) -o bison_mbias mbias.o $(HTSLIB) -lpthread -lz
 
 index:
 	$(CC) $(OPTS) -o bison_index index.c -lpthread
 
-align: $(OBJS) main.o
-	$(CC) $(LIB_DIRS) -o bison main.o $(OBJS) $(LIBBAM) -lm -lpthread $(MPI) -lz
+align: HTSlib $(OBJS) main.o
+	$(CC) $(LIB_DIRS) -o bison main.o $(OBJS) $(HTSLIB) -lm -lpthread $(MPI) -lz
 
-extractor: common.o methylation_extractor.o
-	$(CC) $(LIB_DIRS) -o bison_methylation_extractor common.o methylation_extractor.o $(LIBBAM) -lpthread -lz
+extractor: HTSlib common.o methylation_extractor.o
+	$(CC) $(LIB_DIRS) -o bison_methylation_extractor common.o methylation_extractor.o $(HTSLIB) -lpthread -lz
 
 #Don't compile herd by default
-herd:  $(OBJS) $(HERD_OBJS) herd/main.o
-	$(CC) $(LIB_DIRS) -o bison_herd herd/main.o $(OBJS) $(HERD_OBJS) $(LIBBAM) -lm -lpthread $(MPI) -lz
+herd:  HTSlib $(OBJS) $(HERD_OBJS) herd/main.o
+	$(CC) $(LIB_DIRS) -o bison_herd herd/main.o $(OBJS) $(HERD_OBJS) $(HTSLIB) -lm -lpthread $(MPI) -lz
 
 #Auxiliary programs, don't compile by default
 auxiliary: merge_CpGs bedGraph2methylKit make_reduced_genome aux_python_scripts CpG_coverage bedGraph2MOABS
@@ -89,3 +84,6 @@ clean:
 	rm -f *.o bison bison_* bedGraph2methylKit bedGraph2MOABS check_accuracy make_reduced_genome *.py
 	rm -f herd/*.o
 	rm -f auxiliary/*.o
+
+clean-all: clean
+	make --directory=htslib clean

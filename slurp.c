@@ -179,59 +179,59 @@ void *slurp(void *a) {
     int ntasks = (config.directional) ? 3: 5;
     int i;
     for(i=1; i<ntasks; i++) {
-        if(!config.quiet) printf("Sending start to node %i\n", i); fflush(stdout);
+        if(!config.quiet) fprintf(stderr, "Sending start to node %i\n", i); fflush(stderr);
         MPI_Ssend(&start, 1, MPI_INT, i, 0, MPI_COMM_WORLD);
     }
     //Get the header
     if(MPI_Recv((void *) &size, 1, MPI_INT, 1, 1, MPI_COMM_WORLD, &status) != MPI_SUCCESS) {
-        printf("Received an error when trying to receive header size.\n");
-        fflush(stdout);
+        fprintf(stderr, "Received an error when trying to receive header size.\n");
+        fflush(stderr);
         quit(3, -2);
     }
     p = malloc((size_t) size);
     if(MPI_Recv(p, size, MPI_BYTE, 1, 2, MPI_COMM_WORLD, &status) != MPI_SUCCESS) {
-        printf("Received an error when trying to receive header.\n");
-        fflush(stdout);
+        fprintf(stderr, "Received an error when trying to receive header.\n");
+        fflush(stderr);
         quit(3, -2);
     }
-    global_header = bam_header_init();
+    global_header = bam_hdr_init();
     unpack_header(global_header, p);
     free(p);
 #else
     char *iname = malloc(sizeof(char) * (1+strlen(config.odir)+strlen(config.basename)+strlen("_CTOT.bam")));
     sprintf(iname, "%s%s_OT.bam", config.odir, config.basename);
-    fp1 = bam_open(iname, "r");
+    fp1 = sam_open(iname, "rb");
     sprintf(iname, "%s%s_OB.bam", config.odir, config.basename);
-    fp2 = bam_open(iname, "r");
+    fp2 = sam_open(iname, "rb");
     if(!config.directional) {
         sprintf(iname, "%s%s_CTOT.bam", config.odir, config.basename);
-        fp3 = bam_open(iname, "r");
+        fp3 = sam_open(iname, "rb");
         sprintf(iname, "%s%s_CTOB.bam", config.odir, config.basename);
-        fp4 = bam_open(iname, "r");
+        fp4 = sam_open(iname, "rb");
     }
     free(iname);
-    global_header = bam_header_read(fp1);
-    if(!config.quiet) printf("header written\n"); fflush(stdout);
+    global_header = sam_hdr_read(fp1);
+    if(!config.quiet) fprintf(stderr, "header written\n"); fflush(stderr);
     bam1_t *read = bam_init1();
     MPI_read *packed = calloc(1, sizeof(MPI_read));
     packed->packed = NULL;
     packed->size = 0;
-    bam_header_t *tmp;
-    tmp = bam_header_read(fp2);
-    bam_header_destroy(tmp);
+    bam_hdr_t *tmp;
+    tmp = sam_hdr_read(fp2);
+    bam_hdr_destroy(tmp);
     if(!config.directional) {
-        tmp = bam_header_read(fp3);
-        bam_header_destroy(tmp);
-        tmp = bam_header_read(fp4);
-        bam_header_destroy(tmp);
+        tmp = sam_hdr_read(fp3);
+        bam_hdr_destroy(tmp);
+        tmp = sam_hdr_read(fp4);
+        bam_hdr_destroy(tmp);
     }
 #endif
 
     //Write a header
-    bam_header_write(OUTPUT_BAM, global_header);
+    sam_hdr_write(OUTPUT_BAM, global_header);
 
     t0 = time(NULL);
-    if(!config.quiet) printf("Started slurping @%s", ctime(&t0)); fflush(stdout);
+    if(!config.quiet) fprintf(stderr, "Started slurping @%s", ctime(&t0)); fflush(stderr);
 #ifndef DEBUG
     while(nfinished < nnodes) {
         MPI_Probe(MPI_ANY_SOURCE, 5, MPI_COMM_WORLD, &status);
@@ -256,46 +256,46 @@ void *slurp(void *a) {
     }
 #else
     //OT
-    while(bam_read1(fp1, read) > 1) {
+    while(sam_read1(fp1, global_header, read) > 1) {
         packed->size = 0;
         packed = pack_read(read, packed);
         add_element(node1_last_sentinel, packed->packed);
         if(config.paired) {
-            bam_read1(fp1, read);
+            sam_read1(fp1, global_header, read);
             packed->size = 0;
             packed = pack_read(read, packed);
             add_element(node1_last_sentinel, packed->packed);
         }
         //OB
-        bam_read1(fp2, read);
+        sam_read1(fp2, global_header, read);
         packed->size = 0;
         packed = pack_read(read, packed);
         add_element(node2_last_sentinel, packed->packed);
         if(config.paired) {
-            bam_read1(fp2, read);
+            sam_read1(fp2, global_header, read);
             packed->size = 0;
             packed = pack_read(read, packed);
             add_element(node2_last_sentinel, packed->packed);
         }
         if(!config.directional) {
             //CTOT
-            bam_read1(fp3, read);
+            sam_read1(fp3, global_header, read);
             packed->size = 0;
             packed = pack_read(read, packed);
             add_element(node3_last_sentinel, packed->packed);
             if(config.paired) {
-                bam_read1(fp3, read);
+                sam_read1(fp3, global_header, read);
                 packed->size = 0;
                 packed = pack_read(read, packed);
                 add_element(node3_last_sentinel, packed->packed);
             }
             //CTOB
-            bam_read1(fp4, read);
+            sam_read1(fp4, global_header, read);
             packed->size = 0;
             packed = pack_read(read, packed);
             add_element(node4_last_sentinel, packed->packed);
             if(config.paired) {
-                bam_read1(fp4, read);
+                sam_read1(fp4, global_header, read);
                 packed->size = 0;
                 packed = pack_read(read, packed);
                 add_element(node4_last_sentinel, packed->packed);
@@ -313,6 +313,6 @@ void *slurp(void *a) {
     }
 #endif
     t1 = time(NULL);
-    if(!config.quiet) printf("Finished slurping @%s\t(%f seconds elapsed)\n", ctime(&t1), difftime(t1, t0)); fflush(stdout);
+    if(!config.quiet) fprintf(stderr, "Finished slurping @%s\t(%f seconds elapsed)\n", ctime(&t1), difftime(t1, t0)); fflush(stderr);
     return NULL;
 }

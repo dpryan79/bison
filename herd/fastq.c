@@ -278,25 +278,25 @@ void * send_store_fastq(void *a) {
     }
     while(fname1 != NULL) {
         if(rv1 != 0 || rv2 != 0) {
-            printf("An error ocurred when trying to expand the first filename.\n");
+            fprintf(stderr, "An error ocurred when trying to expand the first filename.\n");
             if(rv1 == WRDE_BADCHAR) {
-                printf("%s contains an illegal character\n", fname1);
+                fprintf(stderr, "%s contains an illegal character\n", fname1);
             } else if(rv1 == WRDE_BADVAL) {
-                printf("%s contains an undefined shell variable\n", fname1);
+                fprintf(stderr, "%s contains an undefined shell variable\n", fname1);
             } else if(rv1 == WRDE_NOSPACE) {
-                printf("Out of memory when processing %s\n", fname1);
+                fprintf(stderr, "Out of memory when processing %s\n", fname1);
             } else if(rv1 == WRDE_SYNTAX) {
-                printf("%s had a syntax error\n", fname1);
+                fprintf(stderr, "%s had a syntax error\n", fname1);
             }
             if(config.paired) {
                 if(rv2 == WRDE_BADCHAR) {
-                    printf("%s contains an illegal character\n", fname2);
+                    fprintf(stderr, "%s contains an illegal character\n", fname2);
                 } else if(rv2 == WRDE_BADVAL) {
-                    printf("%s contains an undefined shell variable\n", fname2);
+                    fprintf(stderr, "%s contains an undefined shell variable\n", fname2);
                 } else if(rv2 == WRDE_NOSPACE) {
-                    printf("Out of memory when processing %s\n", fname2);
+                    fprintf(stderr, "Out of memory when processing %s\n", fname2);
                 } else if(rv2 == WRDE_SYNTAX) {
-                    printf("%s had a syntax error\n", fname2);
+                    fprintf(stderr, "%s had a syntax error\n", fname2);
                 }
             }
             goto finish; //Yeah yeah, an evil "goto"
@@ -366,8 +366,8 @@ void * send_store_fastq(void *a) {
                     if(j+multiplier*i == taskid) {
                         status = MPI_Send((void *) packed->packed, packed->size, MPI_BYTE, 0, 3, MPI_COMM_WORLD);
                         if(status != MPI_SUCCESS) {
-                            printf("MPI_Send returned %i\n", status);
-                            fflush(stdout);
+                            fprintf(stderr, "MPI_Send returned %i\n", status);
+                            fflush(stderr);
                         }
                     }
                 }
@@ -375,8 +375,8 @@ void * send_store_fastq(void *a) {
                 //Send to j+multiplier*i
                 status = MPI_Send((void *) packed->packed, packed->size, MPI_BYTE, j+multiplier*i, 3, MPI_COMM_WORLD);
                 if(status != MPI_SUCCESS) {
-                    printf("MPI_Send returned %i\n", status);
-                    fflush(stdout);
+                    fprintf(stderr, "MPI_Send returned %i\n", status);
+                    fflush(stderr);
                 }
 #endif
             }
@@ -411,7 +411,7 @@ void * send_store_fastq(void *a) {
             sprintf(finished_signal, "\2");
             add_element(last_fastq_sentinel_node[j], (void *) finished_signal);
         }
-        if(!config.quiet) printf("finished sending reads from %s (%lu reads)\n", fnames1[current_file], total); fflush(stdout);
+        if(!config.quiet) fprintf(stderr, "finished sending reads from %s (%lu reads)\n", fnames1[current_file], total); fflush(stderr);
         //Close the input files
         if(f1->type == 0) fclose(f1->x.fptxt);
         else if(f1->type == 1) { gzclearerr(f1->x.fpgz); gzclose(f1->x.fpgz); }
@@ -450,7 +450,7 @@ finish: //We'll only ever "goto" here on an error, otherwise we'll get here norm
 #else
     for(j=1; j<=effective_nodes(); j++) {
         status = MPI_Send(A, 1, MPI_BYTE, j, 3, MPI_COMM_WORLD);
-        if(status != MPI_SUCCESS) printf("Couldn't send 'finished' message to worker %i!\n", j);
+        if(status != MPI_SUCCESS) fprintf(stderr, "Couldn't send 'finished' message to worker %i!\n", j);
     }
 #endif
 
@@ -484,6 +484,6 @@ finish: //We'll only ever "goto" here on an error, otherwise we'll get here norm
     }
     wordfree(&fnames1_wordexp);
     if(config.paired) wordfree(&fnames2_wordexp);
-    if(!config.quiet) printf("Finished reading in fastq files!\n"); fflush(stdout);
+    if(!config.quiet) fprintf(stderr, "Finished reading in fastq files!\n"); fflush(stderr);
     return NULL;
 }

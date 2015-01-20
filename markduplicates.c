@@ -43,7 +43,7 @@ typedef struct {
 inline int32_t total_phred(bam1_t *read) {
     int32_t l = read->core.l_qseq;
     int32_t i=0, total=0;
-    uint8_t *qual = bam1_qual(read);
+    uint8_t *qual = bam_get_qual(read);
 
     for(i=0; i<l; i++) {
         total += *(qual+i);
@@ -293,7 +293,7 @@ inline int32_t get_strand(bam1_t *read) {
 
 inline int32_t get_pos(bam1_t *read) {
     int32_t pos = read->core.pos;
-    uint32_t *CIGAR = bam1_cigar(read);
+    uint32_t *CIGAR = bam_get_cigar(read);
     int32_t op, nops;
 
     if(read->core.n_cigar == 1) return pos;
@@ -328,7 +328,7 @@ void calls2uint(bam1_t *read, uint64_t *meth, uint64_t *unmeth) {
     int32_t i, l = read->core.l_qseq, start, end, offset = get_pos(read)-read->core.pos;
     uint8_t *p = bam_aux_get(read, "XM");
     char *XM = NULL;
-    uint8_t *qual = bam1_qual(read);
+    uint8_t *qual = bam_get_qual(read);
     int word_offset = 0;
 
     if(read->core.flag & BAM_FPAIRED) {
@@ -402,8 +402,8 @@ void calls2uint(bam1_t *read, uint64_t *meth, uint64_t *unmeth) {
 
 int main(int argc, char *argv[]) {
     bam1_t *read;
-    bam_header_t *header;
-    bamFile fp = NULL, of = NULL;
+    bam_hdr_t *header;
+    htsFile *fp = NULL, *of = NULL;
     uint64_t total_pairs = 0, max_length = 10000000;
     uint64_t bitmap_length = 0, cur_read = 0, ndups = 0;
     uint64_t grow_size = 1000000;
@@ -429,23 +429,23 @@ int main(int argc, char *argv[]) {
             n_compression_threads = atoi(argv[++i]);
         } else if(iname == NULL) {
             iname = argv[i];
-            fp = bam_open(iname, "r");
+            fp = sam_open(iname, "rb");
         } else if(oname == NULL) {
             oname = argv[i];
         } else {
-            printf("Unrecognized option: %s\n", argv[i]);
+            fprintf(stderr, "Unrecognized option: %s\n", argv[i]);
             usage(argv[0]);
             return 1;
         }
     }
     if(iname == NULL || oname == NULL) {
-        printf("Either the input or output file name were not specified!\n");
+        fprintf(stderr, "Either the input or output file name were not specified!\n");
         usage(argv[0]);
         return 2;
     }
 
     //Set everything up
-    header = bam_header_read(fp);
+    header = sam_hdr_read(fp);
     read = bam_init1();
     alignments = malloc(sizeof(alignment)*max_length);
     assert(alignments != NULL);
@@ -454,7 +454,7 @@ int main(int argc, char *argv[]) {
     fill_table();
 
     //Read in the alignments
-    while(bam_read1(fp, read) > 1) {
+    while(sam_read1(fp, header, read) > 1) {
         if(read->core.flag & BAM_FUNMAP) continue; //We just skip over unmapped reads
 
         alignments[total_pairs].tid1 = get_tid(read);
@@ -467,7 +467,7 @@ int main(int argc, char *argv[]) {
         alignments[total_pairs].start2 = 0;
         calls2uint(read, alignments[total_pairs].meth, alignments[total_pairs].unmeth);
         if(read->core.flag & BAM_FPAIRED && !(read->core.flag & BAM_FMUNMAP)) {
-            assert(bam_read1(fp,read)>1);
+            assert(sam_read1(fp,header,read)>1);
             alignments[total_pairs].tid2 = get_tid(read);
             alignments[total_pairs].start2 = get_pos(read);
             alignments[total_pairs].total_phred += total_phred(read);
@@ -483,7 +483,7 @@ int main(int argc, char *argv[]) {
             assert(alignments != NULL);
         }
     }
-    bam_close(fp);
+    sam_close(fp);
 
     //create bitmap
     bitmap_length = max_length/32;
@@ -496,30 +496,30 @@ int main(int argc, char *argv[]) {
     //Mark duplicates in bitmap
     ndups = mark_dups(alignments, bitmap, total_pairs);
     free(alignments);
-    printf("There were %"PRIu64" duplicates from %"PRIu64" total reads or pairs\n", ndups, total_pairs);
+    fprintf(stderr, "There were %"PRIu64" duplicates from %"PRIu64" total reads or pairs\n", ndups, total_pairs);
 
     //reopen file, iterate through and change flags as appropriate
-    fp = bam_open(iname, "r");
-    header = bam_header_read(fp);
-    of = bam_open(oname, "w");
-    if(n_compression_threads > 1) bgzf_mt(of, n_compression_threads, 256);
-    bam_header_write(of, header);
+    fp = sam_open(iname, "rb");
+    header = sam_hdr_read(fp);
+    of = sam_open(oname, "wb");
+    if(n_compression_threads > 1) bgzf_mt(of->fp.bgzf, n_compression_threads, 256);
+    sam_hdr_write(of, header);
 
-    while(bam_read1(fp, read) > 1) {
+    while(sam_read1(fp, header, read) > 1) {
         //Only set as duplicate if it's mapped
         if(!(read->core.flag & BAM_FUNMAP)) if(get_bit(bitmap, cur_read)) read->core.flag = read->core.flag | BAM_FDUP;
-        bam_write1(of, read);
+        sam_write1(of, header, read);
         if(read->core.flag & BAM_FPAIRED) {
-            assert(bam_read1(fp, read) > 1);
+            assert(sam_read1(fp, header, read) > 1);
             if(!(read->core.flag & BAM_FUNMAP)) if(get_bit(bitmap, cur_read)) read->core.flag = read->core.flag | BAM_FDUP;
-            bam_write1(of, read);
+            sam_write1(of, header, read);
         }
         if(!(read->core.flag & BAM_FUNMAP)) cur_read++;
     }
 
     //Clean up
-    bam_close(fp);
-    bam_close(of);
+    sam_close(fp);
+    sam_close(of);
     bam_destroy1(read);
     free(bitmap);
 

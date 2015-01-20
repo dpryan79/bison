@@ -1,20 +1,7 @@
 #include "bison.h"
 
 KSTREAM_INIT(gzFile, gzread, 16384)
-#ifndef HTSLIB
-KHASH_MAP_INIT_STR(ref, uint64_t)
-#endif
 FILE *popen_fd;
-
-#ifndef HTSLIB
-struct __tamFile_t {
-        gzFile fp;
-        kstream_t *ks;
-        kstring_t *str;
-        uint64_t n_lines;
-        int is_first;
-};
-#endif
 
 /******************************************************************************
 *
@@ -93,16 +80,16 @@ void quit(int FLAG, int rv) {
             free(*(chromosomes.chromosome+i));
         }
         free(chromosomes.chromosome);
-        if(FLAG && OUTPUT_BAM) bam_close(OUTPUT_BAM);
+        if(FLAG && OUTPUT_BAM) sam_close(OUTPUT_BAM);
     }
     MPI_Finalize();
     if(taskid == MASTER && FLAG > 0) {
 #ifdef DEBUG
-        if(fp1) bam_close(fp1);
-        if(fp2) bam_close(fp2);
+        if(fp1) sam_close(fp1);
+        if(fp2) sam_close(fp2);
         if(!config.directional) {
-            if(fp3) bam_close(fp3);
-            if(fp4) bam_close(fp4);
+            if(fp3) sam_close(fp3);
+            if(fp4) sam_close(fp4);
         }
 #else
         if(config.unmapped) {
@@ -183,36 +170,6 @@ void print_metrics() {
     free(of);
 }
 
-#ifndef HTSLIB
-tamFile sam_popen(char *cmd) {
-    tamFile fp = calloc(1, sizeof(struct __tamFile_t));
-    gzFile gzfp;
-    int fid, fid2;
-    popen_fd = popen(cmd, "r"); //Global
-
-    if(popen_fd == NULL) return 0;
-    fid = fileno(popen_fd);
-    fid2 = dup(fid); //otherwise, the file descriptor is closed by zlib and pclose() won't work!!
-    gzfp = gzdopen(fid2, "r");
-    fp->str = (kstring_t*) calloc(1, sizeof(kstring_t));
-    fp->fp = gzfp;
-    fp->ks = ks_init(fp->fp);
-    fp->n_lines = 0;
-    fp->is_first = 1;
-    return fp;
-}
-
-void sam_pclose(tamFile fp) {
-    if(fp) {
-        ks_destroy(fp->ks);
-        gzclose(fp->fp);
-        pclose(popen_fd); //global
-        free(fp->str->s);
-        free(fp->str);
-        free(fp);
-    }
-}
-#else
 htsFile * sam_popen(char *cmd) {
     htsFile *fp = (htsFile*)calloc(1, sizeof(htsFile));
     int fid, fid2;
@@ -227,10 +184,9 @@ htsFile * sam_popen(char *cmd) {
     if(hfile == NULL) return 0;
 
     fp->is_be = ed_is_big();
-    fp->is_kstream = 1;
-    //KS_BGZF is manually set in bison.h
     BGZF *gzfp = bgzf_hopen(hfile, "r");
     fp->fp.voidp = ks_init(gzfp);
+    fp->format.format = sam;
 
     return(fp);
 }
@@ -239,4 +195,3 @@ void sam_pclose(htsFile *fp) {
     hts_close(fp);
     pclose(popen_fd);
 }
-#endif

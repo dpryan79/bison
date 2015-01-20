@@ -45,9 +45,9 @@ void * bt2_build(void *a) {
     } else {
         sprintf(cmd, "bowtie2-build %s %s/genome.fa %s/BS_GA", options->options, options->odir, options->odir);
     }
-    printf("Now executing: %s\n", cmd);
+    fprintf(stderr, "Now executing: %s\n", cmd);
     rv = system(cmd);
-    if(rv) printf("%s returned with status %i!\n", cmd, rv);
+    if(rv) fprintf(stderr, "%s returned with status %i!\n", cmd, rv);
     free(cmd);
     return NULL;
 }
@@ -57,7 +57,7 @@ void convert(char *p, FILE *CT, FILE *GA) {
     FILE *fp;
     int i;
 
-    printf("Reading in and converting %s...\n", p);
+    fprintf(stderr, "Reading in and converting %s...\n", p);
     fp = fopen(p, "r");
     while(fgets(CT_line, MAXLINE, fp)) {
         if(*CT_line != '>') {
@@ -106,7 +106,7 @@ int main(int argc, char *argv[]) {
     options = (char *) calloc(1, sizeof(char));
     for(i=1; i<argc-1; i++) {
         if(strcmp(argv[i], "-c") == 0) {
-            printf("The -c option isn't supported!\n");
+            fprintf(stderr, "The -c option isn't supported!\n");
             return 1;
         }
         options = realloc(options, sizeof(char) * (strlen(options) + strlen(argv[i]) + 2));
@@ -123,12 +123,12 @@ int main(int argc, char *argv[]) {
             }
             odir = strdup(basedir);
         } else {
-            printf("It seems that %s is not a directory! This isn't supported!\n", argv[argc-1]);
+            fprintf(stderr, "It seems that %s is not a directory! This isn't supported!\n", argv[argc-1]);
             usage(argv[0]);
             return 1;
         }
     } else {
-        printf("It seems that %s is not a directory! This isn't supported!\n", argv[argc-1]);
+        fprintf(stderr, "It seems that %s is not a directory! This isn't supported!\n", argv[argc-1]);
         usage(argv[0]);
         return 1;
     }
@@ -137,7 +137,7 @@ int main(int argc, char *argv[]) {
     odir = realloc(odir, sizeof(char) * (strlen(odir) + 1 + strlen("bisulfite_genome")));
     odir = strcat(odir, "bisulfite_genome");
     mkdir(odir, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-    printf("Output will be placed under %s\n", odir);
+    fprintf(stderr, "Output will be placed under %s\n", odir);
     CT_dir = malloc(sizeof(char) * (strlen(odir) + strlen("/CT_conversion/genome.fa") +1));
     sprintf(CT_dir, "%s/CT_conversion", odir);
     mkdir(CT_dir, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
@@ -183,8 +183,8 @@ int main(int argc, char *argv[]) {
     //We don't actually need these anymore
     *(CT_dir+strlen(CT_dir)) = '/';
     *(GA_dir+strlen(GA_dir)) = '/';
-    printf("Removing %s\n", CT_dir);
-    printf("Removing %s\n", GA_dir);
+    fprintf(stderr, "Removing %s\n", CT_dir);
+    fprintf(stderr, "Removing %s\n", GA_dir);
     unlink(CT_dir);
     unlink(GA_dir);
 

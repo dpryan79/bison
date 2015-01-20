@@ -1,9 +1,5 @@
 #include "bison.h"
-#ifndef HTSLIB
-#include "sam.h"
-#else
 #define samfile_t samFile
-#endif
 
 //Eh, this is simple enough for a small program
 int storeCpG, storeCHG, storeCHH, min_Phred;
@@ -265,7 +261,7 @@ int process_call(int32_t tid, unsigned int position, char call, Sites *sites, ch
         site->type = (call == 'X') ? 1 : 0;
         (sites->num_CHG)++;
     } else {
-        printf("(1) Got an unknown character in the XM string of a read: %c\n",call);
+        fprintf(stderr, "[process_call] Got an unknown character in the XM string of a read: %c\n",call);
         return 0;
     }
     return 1;
@@ -283,7 +279,7 @@ int extractor_process_single(bam1_t *read, Sites *sites) {
     char *XM = bam_aux2Z(bam_aux_get(read,"XM"));
     char *XR = bam_aux2Z(bam_aux_get(read, "XR"));
     char *XG = bam_aux2Z(bam_aux_get(read, "XG"));
-    uint8_t *QUAL = bam1_qual(read);
+    uint8_t *QUAL = bam_get_qual(read);
     char strand = (strcmp(bam_aux2Z(bam_aux_get(read,"XG")), "CT") == 0) ? '+' : '-';
     char call;
     int i, start = 0, end = strlen(XM); //These may be overridden
@@ -368,7 +364,7 @@ int extractor_process_single(bam1_t *read, Sites *sites) {
                 call = *(XM+i);
                 if(((call == 'Z' || call == 'z') && storeCpG) || ((call == 'X' || call == 'x') && storeCHG) || ((call == 'H' || call == 'h') && storeCHH)) {
                     if(!process_call(read->core.tid, *(positions+i), *(XM+i), sites, strand)) {
-                        printf("(2) Got an unknown character (%i) in the XM string of a single-ended read: %s\n", i, XM);
+                        fprintf(stderr, "[extractor_process_single] Got an unknown character (%i) in the XM string of a single-ended read: %s\n", i, XM);
                         free(positions);
                         return 0;
                     }
@@ -397,6 +393,7 @@ int extractor_process_overlapping(bam1_t *read1, bam1_t *read2, Sites *sites) {
     char *XM2 = bam_aux2Z(bam_aux_get(read2,"XM"));
     int i, j, end1 = (int) read1->core.l_qseq, end2 = (int) read2->core.l_qseq;
     int start1 = 0, start2 = 0;
+    uint8_t *QUAL1 = bam_get_qual(read1), *QUAL2 = bam_get_qual(read2);
 
     /***************************************************************************
     *
@@ -482,14 +479,16 @@ int extractor_process_overlapping(bam1_t *read1, bam1_t *read2, Sites *sites) {
             if(*(positions1+i) != ULLONG_MAX) {
                 if(*XM1 != '.') {
                     call = *XM1;
+                    if(*(QUAL1+i) < min_Phred) goto A;
                     if(((call == 'Z' || call == 'z') && storeCpG) || ((call == 'X' || call == 'x') && storeCHG) || ((call == 'H' || call == 'h') && storeCHH)) {
                         if(!process_call(read1->core.tid, *(positions1+i), *XM1, sites, strand)) {
-                            printf("(3) Got an unknown character in the XM string: %s\n", XM1);
+                            fprintf(stderr, "(3) Got an unknown character in the XM string: %s\n", XM1);
                             return 0;
                         }
                     }
                 }
             }
+A:
             i++;
             XM1++;
             if(i == end1) break;
@@ -499,14 +498,16 @@ int extractor_process_overlapping(bam1_t *read1, bam1_t *read2, Sites *sites) {
             if(*(positions2+j) != ULLONG_MAX) {
                 if(*XM2 != '.') {
                     call = *XM2;
+                    if(*(QUAL2+j) < min_Phred) goto B;
                     if(((call == 'Z' || call == 'z') && storeCpG) || ((call == 'X' || call == 'x') && storeCHG) || ((call == 'H' || call == 'h') && storeCHH)) {
                         if(!process_call(read2->core.tid, *(positions2+j), *XM2, sites, strand)) {
-                            printf("(4) Got an unknown character in the XM string: %s\n", XM2);
+                            fprintf(stderr, "(4) Got an unknown character in the XM string: %s\n", XM2);
                             return 0;
                         }
                     }
                 }
             }
+B:
             j++;
             XM2++;
             if(j == end2) break;
@@ -522,25 +523,29 @@ int extractor_process_overlapping(bam1_t *read1, bam1_t *read2, Sites *sites) {
                 if(*(positions1+i) < *(positions2+j)) {
                     if(*XM1 != '.') {
                         call = *XM1;
+                        if(*(QUAL1+i) < min_Phred) goto C;
                         if(((call == 'Z' || call == 'z') && storeCpG) || ((call == 'X' || call == 'x') && storeCHG) || ((call == 'H' || call == 'h') && storeCHH)) {
                             if(!process_call(read1->core.tid, *(positions1+i), *XM1, sites, strand)) {
-                                printf("(5a) Got an unknown character in the XM string: %s\n", XM1);
+                                fprintf(stderr, "(5a) Got an unknown character in the XM string: %s\n", XM1);
                                 return 0;
                             }
                         }
                     }
+C:
                     XM1++;
                     i++;
                 } else {
                     if(*XM2 != '.') {
                         call = *XM2;
+                        if(*(QUAL2+j) < min_Phred) goto D;
                         if(((call == 'Z' || call == 'z') && storeCpG) || ((call == 'X' || call == 'x') && storeCHG) || ((call == 'H' || call == 'h') && storeCHH)) {
                             if(!process_call(read2->core.tid, *(positions2+j), *XM2, sites, strand)) {
-                                printf("(5b) Got an unknown character in the XM string: %s\n", XM2);
+                                fprintf(stderr, "(5b) Got an unknown character in the XM string: %s\n", XM2);
                                 return 0;
                             }
                         }
                     }
+D:
                     XM2++;
                     j++;
                 }
@@ -550,32 +555,36 @@ int extractor_process_overlapping(bam1_t *read1, bam1_t *read2, Sites *sites) {
             if(*XM1 == *XM2) {
                 if(*XM1 != '.') {
                     call = *XM1;
+                    if(1.2*((*(QUAL1+i)>*(QUAL2+j))?(*(QUAL1+i)):(*(QUAL2+j))) < min_Phred) goto E; 
                     if(((call == 'Z' || call == 'z') && storeCpG) || ((call == 'X' || call == 'x') && storeCHG) || ((call == 'H' || call == 'h') && storeCHH)) {
                         if(!process_call(read1->core.tid, *(positions1+i), *XM1, sites, strand)) {
-                            printf("(6) Got an unknown character in the XM string: %s\n", XM1);
+                            fprintf(stderr, "(6) Got an unknown character in the XM string: %s\n", XM1);
                             return 0;
                         }
                     }
                 }
-            } else { //bison will call '.' if there is an N in a read or an impossible conversion, so whichever read has a call is correct (the call becomes '.' if the reads have different calls)
-                if(*XM2 != '.' && *XM1 == '.') {
+            } else {
+                if(*(QUAL1+i) > *(QUAL2+j)) {
+                    call = *XM1;
+                    if(*(QUAL1+i)-*(QUAL2+j) < min_Phred) goto E;
+                    if(((call == 'Z' || call == 'z') && storeCpG) || ((call == 'X' || call == 'x') && storeCHG) || ((call == 'H' || call == 'h') && storeCHH)) {
+                        if(!process_call(read1->core.tid, *(positions1+i), *XM1, sites, strand)) {
+                            fprintf(stderr, "(7) Got an unknown character in the XM string: %s\n", XM1);
+                            return 0;
+                        }
+                    }
+                } else if(*(QUAL2+j) > *(QUAL1+i)) {
                     call = *XM2;
+                    if(*(QUAL2+j)-*(QUAL1+i) < min_Phred) goto E;
                     if(((call == 'Z' || call == 'z') && storeCpG) || ((call == 'X' || call == 'x') && storeCHG) || ((call == 'H' || call == 'h') && storeCHH)) {
                         if(!process_call(read2->core.tid, *(positions2+j), *XM2, sites, strand)) {
-                            printf("(7) Got an unknown character in the XM string: %s\n", XM2);
+                            fprintf(stderr, "(8) Got an unknown character in the XM string: %s\n", XM2);
                             return 0;
                         }
                     }
-                } else if(*XM1 != '.' && *XM2 == '.') {
-                    call = *XM1;
-                    if(((call == 'Z' || call == 'z') && storeCpG) || ((call == 'X' || call == 'x') && storeCHG) || ((call == 'H' || call == 'h') && storeCHH)) {
-                        if(!process_call(read1->core.tid, *(positions1+i), *XM1, sites, strand)) {
-                            printf("(8) Got an unknown character in the XM string: %s\n", XM1);
-                            return 0;
-                        }
-                    }
-                }
+                } //Else ignore
             }
+E:
             XM1++;
             XM2++;
             i++;
@@ -602,9 +611,10 @@ int extractor_process_overlapping(bam1_t *read1, bam1_t *read2, Sites *sites) {
             if(*(positions2+j) != ULLONG_MAX) {
                 if(*XM2 != '.') {
                     call = *XM2;
+                    if(*(QUAL2+j) < min_Phred) goto F;
                     if(((call == 'Z' || call == 'z') && storeCpG) || ((call == 'X' || call == 'x') && storeCHG) || ((call == 'H' || call == 'h') && storeCHH)) {
                         if(!process_call(read2->core.tid, *(positions2+j), *XM2, sites, strand)) {
-                            printf("(12) Got an unknown character in the XM string: %s\n", XM2);
+                            fprintf(stderr, "(9) Got an unknown character in the XM string: %s\n", XM2);
                             free(positions1);
                             free(positions2);
                             return 0;
@@ -612,6 +622,7 @@ int extractor_process_overlapping(bam1_t *read1, bam1_t *read2, Sites *sites) {
                     }
                 }
             }
+F:
             XM2++;
             j++;
         }
@@ -620,9 +631,10 @@ int extractor_process_overlapping(bam1_t *read1, bam1_t *read2, Sites *sites) {
             if(*(positions1+i) != ULLONG_MAX) {
                 if(*XM1 != '.') {
                     call = *XM1;
+                    if(*(QUAL1+i) < min_Phred) goto G;
                     if(((call == 'Z' || call == 'z') && storeCpG) || ((call == 'X' || call == 'x') && storeCHG) || ((call == 'H' || call == 'h') && storeCHH)) {
                         if(!process_call(read1->core.tid, *(positions1+i), *XM1, sites, strand)) {
-                            printf("(13) Got an unknown character in the XM string: %s\n", XM1);
+                            fprintf(stderr, "(10) Got an unknown character in the XM string: %s\n", XM1);
                             free(positions1);
                             free(positions2);
                             return 0;
@@ -630,6 +642,7 @@ int extractor_process_overlapping(bam1_t *read1, bam1_t *read2, Sites *sites) {
                     }
                 }
             }
+G:
             XM1++;
             i++;
         }
@@ -672,7 +685,7 @@ void trim3(bam1_t *read, int digest_types) {
     unsigned long long offset = genome_offset(lookup_chrom(read), read->core.pos);
     char *sequence;
     char *XM = bam_aux2Z(bam_aux_get(read, "XM"));
-    uint32_t end = bam_calend(&(read->core), bam1_cigar(read));
+    uint32_t end = bam_endpos(read);
     int i, len = strlen(XM);
 
     for(i=0; i<2; i++) {
@@ -738,19 +751,19 @@ void generate_output_names(char *ifile, struct of_struct *of) {
 
     if(storeCpG) {
         sprintf(oname, "%s_CpG.bedGraph", tmp);
-        printf("CpG counts will be written to %s\n", oname);
+        fprintf(stderr, "CpG counts will be written to %s\n", oname);
         of->CpG = fopen(oname, "w");
         fprintf(of->CpG, "track type=bedGraph\n");
     }
     if(storeCHG) {
         sprintf(oname, "%s_CHG.bedGraph", tmp);
-        printf("CHG counts will be written to %s\n", oname);
+        fprintf(stderr, "CHG counts will be written to %s\n", oname);
         of->CHG = fopen(oname, "w");
         fprintf(of->CHG, "track type=bedGraph\n");
     }
     if(storeCHH) {
         sprintf(oname, "%s_CHH.bedGraph", tmp);
-        printf("CHH counts will be written to %s\n", oname);
+        fprintf(stderr, "CHH counts will be written to %s\n", oname);
         of->CHH = fopen(oname, "w");
         fprintf(of->CHH, "track type=bedGraph\n");
     }
@@ -837,6 +850,7 @@ void usage(char *prog) {
 int main(int argc, char *argv[]) {
     int i, max_sites_size = 50000, MspI = 0, TaqI = 0;
     int min_MAPQ = 10;
+    char *XG1, *XG2;
     samfile_t *fp = NULL;
     bam1_t *read1 = bam_init1(), *read2 = bam_init1();
     struct of_struct *of = calloc(1, sizeof(struct of_struct));
@@ -852,7 +866,7 @@ int main(int argc, char *argv[]) {
     chromosomes.nchromosomes = 0;
     storeCpG = storeCHG = storeCHH = 0;
     storeCpG = 1;
-    min_Phred = 10;
+    min_Phred = 5;
     for(i=0; i<4; i++) OT[i] = OB[i] = CTOT[i] = CTOB[i] = 0;
 
     /* read in the file names */
@@ -900,26 +914,17 @@ int main(int argc, char *argv[]) {
             i++;
             chromosomes.max_genome = strtoull(argv[i], NULL, 10);
         } else if(fp == NULL) {
-#ifndef HTSLIB
-            if(argv[i][strlen(argv[i])-3] == 'b') {
-                fp = samopen(argv[i], "rb", NULL);
-            } else {
-                fp = samopen(argv[i], "r", NULL);
-            }
-            global_header = fp->header;
-#else
             fp = sam_open(argv[i], "r");
             global_header = sam_hdr_read(fp);
-#endif
         } else {
-            printf("Unknown parameter %s\n", argv[i]);
+            fprintf(stderr, "Unknown parameter %s\n", argv[i]);
             usage(argv[0]);
             return 1;
         }
     }
 
     if(config.genome_dir == NULL || fp == NULL) {
-        printf("Genome directory or SAM/BAM input file not specified!\n");
+        fprintf(stderr, "Genome directory or SAM/BAM input file not specified!\n");
         usage(argv[0]);
     }
 
@@ -927,55 +932,63 @@ int main(int argc, char *argv[]) {
     generate_output_names(argv[argc-1], of);
 
     //Read in the genome
-    printf("Allocating space for %llu characters\n", chromosomes.max_genome); fflush(stdout);
+    fprintf(stderr, "Allocating space for %llu characters\n", chromosomes.max_genome); fflush(stderr);
     chromosomes.genome = malloc(sizeof(char)*chromosomes.max_genome);
     *chromosomes.genome = '\0';
     if(chromosomes.genome == NULL) {
-        printf("Could not allocate enough room to hold the genome!\n");
+        fprintf(stderr, "Could not allocate enough room to hold the genome!\n");
         return -1;
     }
     read_genome();
 
     //Process the reads
-#ifndef HTSLIB
-    while(samread(fp, read1) > 1) {
-#else
     while(sam_read1(fp, global_header, read1) > 1) {
-#endif
+        XG1 = bam_aux2Z(bam_aux_get(read1, "XG"));
         if(read1->core.flag & BAM_FPAIRED && !(read1->core.flag& BAM_FMUNMAP)) {
-#ifndef HTSLIB
-            samread(fp, read2);
-#else
             sam_read1(fp, global_header, read2);
-#endif
+            while(strcmp(bam_get_qname(read1), bam_get_qname(read2)) != 0) {
+                if(!(read1->core.flag & BAM_FDUP) && read1->core.qual >= min_MAPQ)
+                    if(!extractor_process_single(read1, sites)) { fprintf(stderr, "Error 1!\n"); }
+                read1 = bam_copy1(read1, read2);
+                sam_read1(fp, global_header, read2);
+            }
             r1_pos = read1->core.pos+1;
             r2_pos = read2->core.pos+1;
             tid1 = read1->core.tid;
             tid2 = read2->core.tid;
+            XG2 = bam_aux2Z(bam_aux_get(read2, "XG"));
         } else {
             r1_pos = read1->core.pos+1;
             r2_pos = INT_MAX;
             tid1 = read1->core.tid;
             tid2 = -1;
+            XG2 = NULL;
         }
         if(read1->core.flag & BAM_FDUP) continue;
-        if(read1->core.qual < min_MAPQ) continue;
+        if(read1->core.qual < min_MAPQ) r1_pos = INT_MAX;
+        if(r2_pos != INT_MAX && read2->core.qual < min_MAPQ) r2_pos = INT_MAX;
+        if(r1_pos == INT_MAX && r2_pos == INT_MAX) continue;
         if(TaqI+MspI) process_RRBS_read(read1, read2, MspI+2*TaqI);
 
         //Are the reads even overlapping? If not, this is easy.
-        if(r2_pos == INT_MAX) { //Unpaired read
-            if(!extractor_process_single(read1, sites)) { printf("Error!\n"); break; }
+        if(r2_pos == INT_MAX && r1_pos != INT_MAX) { //Unpaired read #1
+            if(!extractor_process_single(read1, sites)) { fprintf(stderr, "Error 2!\n"); break; }
+        } else if(r1_pos == INT_MAX && r2_pos != INT_MAX) { //Unpaired read #2
+            if(!extractor_process_single(read2, sites)) { fprintf(stderr, "Error 3!\n"); break; }
         } else if(tid1 != tid2) { //Singletons
-            if(!extractor_process_single(read1, sites)) { printf("Error!\n"); break; }
-            if(!extractor_process_single(read2, sites)) { printf("Error!\n"); break; }
-        } else if(r1_pos < r2_pos && r1_pos + read1->core.l_qseq - 1 < r2_pos) { //No Overlap
-            if(!extractor_process_single(read1, sites)) { printf("Error!\n"); break; }
-            if(!extractor_process_single(read2, sites)) { printf("Error!\n"); break; }
-        } else if(r2_pos < r1_pos && r2_pos + read2->core.l_qseq - 1 < r1_pos) { //No Overlap
-            if(!extractor_process_single(read1, sites)) { printf("Error!\n"); break; }
-            if(!extractor_process_single(read2, sites)) { printf("Error!\n"); break; }
+            if(!extractor_process_single(read1, sites)) { fprintf(stderr, "Error 4!\n"); break; }
+            if(!extractor_process_single(read2, sites)) { fprintf(stderr, "Error 5!\n"); break; }
+        } else if(strcmp(XG1, XG2) != 0) { //Incompatible strands
+            if(!extractor_process_single(read1, sites)) { fprintf(stderr, "Error 6!\n"); break; }
+            if(!extractor_process_single(read2, sites)) { fprintf(stderr, "Error 7!\n"); break; }
+        } else if(r1_pos < r2_pos && bam_endpos(read1) < r2_pos) { //No Overlap
+            if(!extractor_process_single(read1, sites)) { fprintf(stderr, "Error 8!\n"); break; }
+            if(!extractor_process_single(read2, sites)) { fprintf(stderr, "Error 9!\n"); break; }
+        } else if(r2_pos < r1_pos && bam_endpos(read2) < r1_pos) { //No Overlap
+            if(!extractor_process_single(read1, sites)) { fprintf(stderr, "Error 10!\n"); break; }
+            if(!extractor_process_single(read2, sites)) { fprintf(stderr, "Error 11!\n"); break; }
         } else { //Overlap
-            if(!extractor_process_overlapping(read1, read2, sites)) { printf("Error!\n"); break; }
+            if(!extractor_process_overlapping(read1, read2, sites)) { printf("Error 12!\n"); break; }
         }
 
         if(sites->num_CpG >= max_sites_size) {
@@ -993,18 +1006,14 @@ int main(int argc, char *argv[]) {
 
         total_reads++;
         if(total_reads % 1000000 == 0) {
-            printf("Processed %u reads\n", total_reads);
-            fflush(stdout);
+            fprintf(stderr, "Processed %u reads\n", total_reads);
+            fflush(stderr);
         }
     }
 
-#ifndef HTSLIB
-    if(samread(fp, read1) > 1) {
-#else
     if(sam_read1(fp, global_header, read1) > 1) {
-#endif
-        printf("We must have exited on an error as there are still reads left\n");
-        fflush(stdout);
+        fprintf(stderr, "We must have exited on an error as there are still reads left\n");
+        fflush(stderr);
     }
 
     //Do the final sort and merge
@@ -1044,12 +1053,8 @@ int main(int argc, char *argv[]) {
     destroy_sites(sites);
     bam_destroy1(read1);
     bam_destroy1(read2);
-#ifndef HTSLIB
-    samclose(fp);
-#else
     sam_close(fp);
     free(global_header);
-#endif
 
     return 0;
 };

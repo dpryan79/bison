@@ -12,7 +12,7 @@
 unsigned long long *calculate_positions(bam1_t *read) {
     unsigned long long *positions = malloc(sizeof(unsigned long long) * (size_t)read->core.l_qseq);
     int i, j, offset = 0, op, op_len;
-    uint32_t *CIGAR = bam1_cigar(read);
+    uint32_t *CIGAR = bam_get_cigar(read);
     unsigned int previous_position = (unsigned int) read->core.pos;
 
     for(i=0; i<read->core.n_cigar; i++) {
@@ -28,7 +28,7 @@ unsigned long long *calculate_positions(bam1_t *read) {
             } else if(op == 2 || op == 3) { //D, N
                 previous_position++;
             } else { //P
-                printf("We encountered a CIGAR operation that we're not ready to deal with in %s\n", bam1_qname(read));
+                fprintf(stderr,"We encountered a CIGAR operation that we're not ready to deal with in %s\n", bam_get_qname(read));
             }
         }
     }
@@ -75,8 +75,8 @@ void read_genome() {
         fullpath = realloc(fullpath, sizeof(char)*(strlen(config.genome_dir)+strlen(files[j]->d_name)+1));
         sprintf(fullpath, "%s%s",config.genome_dir,files[j]->d_name);
         fp = fopen(fullpath, "r");
-        if(!config.quiet) printf("Reading in %s\n", fullpath);
-        fflush(stdout);
+        if(!config.quiet) fprintf(stderr, "Reading in %s\n", fullpath);
+        fflush(stderr);
         while(fgets(line, MAXREAD, fp) != NULL) {
             end=strlen(line);
             if(line[end-1] == '\n') line[end-1] = '\0';
@@ -114,8 +114,8 @@ void read_genome() {
         }
         //Store the last contig's length
         chromosome->length = length;
-        if(!config.quiet) printf("Finished %s\n", fullpath);
-        fflush(stdout);
+        if(!config.quiet) fprintf(stderr, "Finished %s\n", fullpath);
+        fflush(stderr);
         fclose(fp);
         free(files[j]);
     }
@@ -168,7 +168,7 @@ unsigned long long genome_offset(char *chrom, int32_t pos) {
         }
     }
 
-    if(chrom_offset == 0 && pos != 0) printf("Unable to calculate the genomic offset for %s:%i!\n", chrom, (int) pos);
+    if(chrom_offset == 0 && pos != 0) fprintf(stderr, "Unable to calculate the genomic offset for %s:%i!\n", chrom, (int) pos);
     return chrom_offset;
 }
 

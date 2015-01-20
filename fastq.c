@@ -20,11 +20,11 @@ char * reverse_qual(char *qual) {
 void write_unmapped(FILE *fp, bam1_t *read) {
     char *seq = calloc(1+read->core.l_qseq, sizeof(char));
     char *qual = calloc(1+read->core.l_qseq, sizeof(char));
-    uint8_t b, *seqp = bam1_seq(read), *qualp = bam1_qual(read);
+    uint8_t b, *seqp = bam_get_seq(read), *qualp = bam_get_qual(read);
     int i;
 
     for(i=0; i<read->core.l_qseq; i++) {
-        b = bam1_seqi(seqp, i);
+        b = bam_seqi(seqp, i);
         if(b == 1) *(seq+i) = 'A';
         else if(b == 2) *(seq+i) = 'C';
         else if(b == 4) *(seq+i) = 'G';
@@ -37,7 +37,7 @@ void write_unmapped(FILE *fp, bam1_t *read) {
         qual = reverse_qual(qual);
     }
 
-    fprintf(fp, "@%s\n", bam1_qname(read));
+    fprintf(fp, "@%s\n", bam_get_qname(read));
     fprintf(fp, "%s\n", seq);
     fprintf(fp, "+\n");
     fprintf(fp, "%s\n", qual);
@@ -173,7 +173,7 @@ void * convert1(void *a) {
         if(limit) if(total >= limit) break;
     }
 
-    if(!config.quiet) printf("%s contained %llu reads\n", config.FASTQ1, total);
+    if(!config.quiet) fprintf(stderr, "%s contained %llu reads\n", config.FASTQ1, total);
     pclose(f);
     pclose(of1);
     if(!config.directional) pclose(of2);
@@ -242,7 +242,7 @@ void * convert2(void *a) {
         if(limit) if(total >= limit) break;
     }
 
-    if(!config.quiet) printf("%s contained %llu reads\n", config.FASTQ2, total);
+    if(!config.quiet) fprintf(stderr, "%s contained %llu reads\n", config.FASTQ2, total);
     pclose(f);
     pclose(of1);
     if(!config.directional) pclose(of2);
@@ -270,29 +270,29 @@ void convert_fastq(int FLAGS, unsigned int limit) {
     int rc;
 
     if(!config.quiet) {
-        if(FLAGS & 8) printf("Will C->T convert %s and store the results in %s.\n", config.FASTQ1, config.FASTQ1CT);
-        if(FLAGS & 4) printf("Will G->A convert %s and store the results in %s.\n", config.FASTQ1, config.FASTQ1GA);
-        if(FLAGS & 2) printf("Will C->T convert %s and store the results in %s.\n", config.FASTQ2, config.FASTQ2CT);
-        if(FLAGS & 1) printf("Will G->A convert %s and store the results in %s.\n", config.FASTQ2, config.FASTQ2GA);
+        if(FLAGS & 8) fprintf(stderr, "Will C->T convert %s and store the results in %s.\n", config.FASTQ1, config.FASTQ1CT);
+        if(FLAGS & 4) fprintf(stderr, "Will G->A convert %s and store the results in %s.\n", config.FASTQ1, config.FASTQ1GA);
+        if(FLAGS & 2) fprintf(stderr, "Will C->T convert %s and store the results in %s.\n", config.FASTQ2, config.FASTQ2CT);
+        if(FLAGS & 1) fprintf(stderr, "Will G->A convert %s and store the results in %s.\n", config.FASTQ2, config.FASTQ2GA);
     }
 
     if(config.paired) {
         threads = calloc(2, sizeof(pthread_t));
         rc = pthread_create(&(threads[0]), NULL, convert1, (void *) &limit);
         if(rc) {
-            printf("An error occured with invoking pthread_create; %d\n", rc);
+            fprintf(stderr, "An error occured with invoking pthread_create; %d\n", rc);
             exit(-1);
         }
         rc = pthread_create(&(threads[1]), NULL, convert2, (void *) &limit);
         if(rc) {
-            printf("An error occured with invoking pthread_create; %d\n", rc);
+            fprintf(stderr, "An error occured with invoking pthread_create; %d\n", rc);
             exit(-1);
         }
     } else {
         threads = calloc(1, sizeof(pthread_t));
         rc = pthread_create(&(threads[0]), NULL, convert1, (void *) &limit);
         if(rc) {
-            printf("An error occured with invoking pthread_create; %d\n", rc);
+            fprintf(stderr, "An error occured with invoking pthread_create; %d\n", rc);
             exit(-1);
         }
     }

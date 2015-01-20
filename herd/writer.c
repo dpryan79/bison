@@ -44,12 +44,12 @@ void herd_setup(char *fname1, char *fname2) {
     if(config.unmapped) {
         create_fastq_names(fname1, fname2);
         cmd = malloc(sizeof(char) * (strlen(config.unmapped1) + 8));
-        if(!config.quiet) printf("Unmapped reads will be written to %s\n", config.unmapped1);
+        if(!config.quiet) fprintf(stderr, "Unmapped reads will be written to %s\n", config.unmapped1);
         sprintf(cmd, "gzip > %s", config.unmapped1);
         unmapped1 = popen(cmd, "w");
         if(config.paired) {
             cmd = realloc(cmd, sizeof(char) * (strlen(config.unmapped2) + 8));
-            if(!config.quiet) printf("Unmapped reads will be written to %s\n", config.unmapped2);
+            if(!config.quiet) fprintf(stderr, "Unmapped reads will be written to %s\n", config.unmapped2);
             sprintf(cmd, "gzip > %s", config.unmapped2);
             unmapped2 = popen(cmd, "w");
         }
@@ -57,16 +57,16 @@ void herd_setup(char *fname1, char *fname2) {
     }
 
     //Open a file for output
-    OUTPUT_BAM = bam_open(config.outname, "w");
+    OUTPUT_BAM = sam_open(config.outname, "wb");
     if(OUTPUT_BAM == NULL) {
-        printf("Could not open %s for writing!\n", config.outname);
+        fprintf(stderr, "Could not open %s for writing!\n", config.outname);
         quit(2,-1);
     }
-    if(!config.quiet) printf("Alignments will be written to %s\n",config.outname);
-    if(config.n_compression_threads > 1) bgzf_mt(OUTPUT_BAM, config.n_compression_threads, 256);
-    bam_header_write(OUTPUT_BAM, global_header);
-    if(!config.quiet) printf("Alignment metrics will be printed to %s%s.txt\n",config.odir,config.basename);
-    fflush(stdout);
+    if(!config.quiet) fprintf(stderr, "Alignments will be written to %s\n",config.outname);
+    if(config.n_compression_threads > 1) bgzf_mt(OUTPUT_BAM->fp.bgzf, config.n_compression_threads, 256);
+    sam_hdr_write(OUTPUT_BAM, global_header);
+    if(!config.quiet) fprintf(stderr, "Alignment metrics will be printed to %s%s.txt\n",config.odir,config.basename);
+    fflush(stderr);
 }
 
 /******************************************************************************
@@ -127,7 +127,7 @@ void * bam_writer(void *a) {
                     if(is_finished(to_write_node[i])) goto finished;
                     if(unmapped1 != NULL) pclose(unmapped1);
                     if(unmapped2 != NULL) pclose(unmapped2);
-                    bam_close(OUTPUT_BAM);
+                    sam_close(OUTPUT_BAM);
                     current_file++;
                     herd_setup(fnames1[current_file], fnames2[current_file]);
                     i=0;
@@ -157,7 +157,7 @@ void * bam_writer(void *a) {
                 }
                 best_read1 = to_write_node[i]->next->packed;
                 if(!(best_read1->core.flag & BAM_FUNMAP)) {
-                    bam_write1(OUTPUT_BAM, best_read1);
+                    sam_write1(OUTPUT_BAM, global_header, best_read1);
                     herd_update_counts(best_read1);
                 } else {
                     if(config.unmapped) {
@@ -174,7 +174,7 @@ void * bam_writer(void *a) {
                 //Give some status
                 if((t_reads % 100000) == 0) {
                     now = time(NULL);
-                    if(!config.quiet) printf("%llu reads written @ %s", t_reads, ctime_r(&now, ctime_buffer)); fflush(stdout);
+                    if(!config.quiet) fprintf(stderr, "%llu reads written @ %s", t_reads, ctime_r(&now, ctime_buffer)); fflush(stderr);
                 }
             }
         }
@@ -184,7 +184,7 @@ void * bam_writer(void *a) {
 finished:
     if(t_reads != 0) print_metrics(); //There seems to be a race condition for the last sample in a list. This gets around that.
     now = time(NULL);
-    if(!config.quiet) printf("Finished writing output @%s", ctime_r(&now, ctime_buffer)); fflush(stdout);
+    if(!config.quiet) fprintf(stderr, "Finished writing output @%s", ctime_r(&now, ctime_buffer)); fflush(stderr);
 
     free(times);
     for(i=0; i<config.nmthreads; i++) destroy_list(to_write_node[i]);

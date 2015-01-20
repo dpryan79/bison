@@ -98,7 +98,7 @@ int main(int argc, char *argv[]) {
     MPI_Init_thread(NULL, NULL, MPI_THREAD_FUNNELED, &provided);
 #endif
     if(provided != MPI_THREAD_FUNNELED) {
-        printf("Your implementation does not support MPI_THREAD_FUNNELED, which is required for bison to run. This is actually quite unusual!\n");
+        fprintf(stderr, "Your implementation does not support MPI_THREAD_FUNNELED, which is required for bison to run. This is actually quite unusual!\n");
         return -1;
     }
 
@@ -185,7 +185,7 @@ int main(int argc, char *argv[]) {
             chromosomes.max_genome = strtoull(argv[i], NULL, 10);
         } else if(strcmp(argv[i], "--score-min") == 0) {
             i++;
-            if(!config.quiet) printf("Changing --score-min from '%c,%f,%f' to %s!\n", config.scoremin_type, config.scoremin_intercept, config.scoremin_coef, argv[i]);
+            if(!config.quiet) fprintf(stderr, "Changing --score-min from '%c,%f,%f' to %s!\n", config.scoremin_type, config.scoremin_intercept, config.scoremin_coef, argv[i]);
             config.scoremin_type = strtok(argv[i], ",")[0];
             config.scoremin_intercept = (float) atof(strtok(NULL, ","));
             config.scoremin_coef = (float) atof(strtok(NULL, ","));
@@ -196,7 +196,7 @@ int main(int argc, char *argv[]) {
                     config.scoremin_type = 'G';
                     config.scoremin_intercept = 20.0;
                     config.scoremin_coef = 8.0;
-                    if(!config.quiet) printf("Since --local was specified and --score-min was not already changed, changing --score-min to the bowtie2 default of 'G,20,8' (specify --score-min to change this)\n");
+                    if(!config.quiet) fprintf(stderr, "Since --local was specified and --score-min was not already changed, changing --score-min to the bowtie2 default of 'G,20,8' (specify --score-min to change this)\n");
                 }
             }
             if(strcmp(argv[i], "--quiet") == 0) config.quiet = 1;
@@ -211,12 +211,12 @@ int main(int argc, char *argv[]) {
     }
 
 #ifndef DEBUG
-    if(!config.quiet) {printf("%s has rank %i\n", processor_name, taskid); fflush(stdout);}
+    if(!config.quiet) {printf("%s has rank %i\n", processor_name, taskid); fflush(stderr);}
 #endif
 
     if(config.FASTQ1 == NULL || config.genome_dir == NULL || (config.FASTQ2 == NULL && config.paired == 1)) {
         if(taskid == MASTER) {
-            printf("No FASTQ files!\n");
+            fprintf(stderr, "No FASTQ files!\n");
             usage(argv[0]);
         }
         quit(0, -1);
@@ -224,12 +224,12 @@ int main(int argc, char *argv[]) {
 
     //Allocate room for the genome, if needed
     if(taskid == MASTER) {
-        if(!config.quiet) printf("Allocating space for %llu characters\n", chromosomes.max_genome);
-        fflush(stdout);
+        if(!config.quiet) fprintf(stderr, "Allocating space for %llu characters\n", chromosomes.max_genome);
+        fflush(stderr);
         chromosomes.genome = malloc(sizeof(char)*chromosomes.max_genome);
         *chromosomes.genome = '\0';
         if(chromosomes.genome == NULL) {
-            printf("Could not allocate enough room to hold the genome!\n");
+            fprintf(stderr, "Could not allocate enough room to hold the genome!\n");
             return -1;
         }
     } else {
@@ -249,7 +249,7 @@ int main(int argc, char *argv[]) {
     if(config.directional) ntasks = 3;
     MPI_Comm_size(MPI_COMM_WORLD, &mpi_ntasks);
     if(mpi_ntasks < ntasks) {
-        if(taskid == MASTER) printf("There are only %i nodes available but we need %i to work. You need to allocate more nodes!\n", mpi_ntasks, ntasks);
+        if(taskid == MASTER) fprintf(stderr, "There are only %i nodes available but we need %i to work. You need to allocate more nodes!\n", mpi_ntasks, ntasks);
         quit(0, -1);
     }
 #endif
@@ -336,12 +336,12 @@ int main(int argc, char *argv[]) {
         //Open the output file handles
         if(config.unmapped) {
             cmd = realloc(cmd, sizeof(char) * (strlen(config.unmapped1) + 8));
-            if(!config.quiet) printf("Writing unmapped reads to %s\n", config.unmapped1);
+            if(!config.quiet) fprintf(stderr, "Writing unmapped reads to %s\n", config.unmapped1);
             sprintf(cmd, "gzip > %s", config.unmapped1);
             unmapped1 = popen(cmd, "w");
             if(config.paired) {
                 cmd = realloc(cmd, sizeof(char) * (strlen(config.unmapped2) + 8));
-                if(!config.quiet) printf("Writing unmapped reads to %s\n", config.unmapped2);
+                if(!config.quiet) fprintf(stderr, "Writing unmapped reads to %s\n", config.unmapped2);
                 sprintf(cmd, "gzip > %s", config.unmapped2);
                 unmapped2 = popen(cmd, "w");
             }
@@ -352,13 +352,13 @@ int main(int argc, char *argv[]) {
         read_genome();
 
         //Open a file for output
-        OUTPUT_BAM = bam_open(config.outname, "w");
+        OUTPUT_BAM = sam_open(config.outname, "wb");
         if(OUTPUT_BAM == NULL) {
-            printf("Could not open %s for writing!\n", config.outname);
+            fprintf(stderr, "Could not open %s for writing!\n", config.outname);
             quit(2,-1);
         }
-        if(!config.quiet) printf("Alignment metrics will be printed to %s%s.txt\n",config.odir,config.basename);
-        fflush(stdout);
+        if(!config.quiet) fprintf(stderr, "Alignment metrics will be printed to %s%s.txt\n",config.odir,config.basename);
+        fflush(stderr);
 
         //Setup the linked-lists
         node1 = initialize_list(node1);
@@ -377,7 +377,7 @@ int main(int argc, char *argv[]) {
         pthread_join(threads[0], NULL);
 
         //Start freeing things up
-        if(!config.quiet) printf("Closing input files\n");
+        if(!config.quiet) fprintf(stderr, "Closing input files\n");
         free(threads);
         pclose(zip1);
         if(config.paired) pclose(zip2);
@@ -387,8 +387,8 @@ int main(int argc, char *argv[]) {
     } else {
         //worker node stuff, wait for the master
         worker_node(taskid);
-        if(!config.quiet) printf("Returning from worker node %i\n", taskid);
-        fflush(stdout);
+        if(!config.quiet) fprintf(stderr, "Returning from worker node %i\n", taskid);
+        fflush(stderr);
     }
 
     //Clean up

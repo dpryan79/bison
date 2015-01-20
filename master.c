@@ -292,7 +292,7 @@ int unique_alignment(bam1_t *read) {
 *
 *******************************************************************************/
 void swap_sequence(bam1_t *read, char *seq) {
-    uint8_t *sequence = bam1_seq(read), val;
+    uint8_t *sequence = bam_get_seq(read), val;
     char *seq2 = strdup(seq);
     int i, j;
 
@@ -365,7 +365,7 @@ char *callXM(bam1_t *read, char *XG) {
 
     //Extract the read sequence
     for(i=0; i<read->core.l_qseq; i++) {
-        b = bam1_seqi(bam1_seq(read), i);
+        b = bam_seqi(bam_get_seq(read), i);
         if(b == 1) {
             *(read_seq+i) = 'A';
         } else if(b == 2) {
@@ -494,7 +494,7 @@ char *callXX(bam1_t *read, char *XM, char *XG) {
 
     //Extract the read sequence
     for(i=0; i<read->core.l_qseq; i++) {
-        base = bam1_seqi(bam1_seq(read), i);
+        base = bam_seqi(bam_get_seq(read), i);
         if(base == 1) *(read_seq+i) = 'A';
         else if(base == 2) *(read_seq+i) = 'C';
         else if(base == 4) *(read_seq+i) = 'G';
@@ -1169,7 +1169,7 @@ void * master_processer_thread(void *a) {
             if(thread_id == 0) {
                 if((metrics->t_reads) % 100000 == 0) {
                     now = time(NULL);
-                    printf("%llu reads %s", metrics->t_reads, ctime(&now)); fflush(stdout);
+                    fprintf(stderr, "%llu reads %s", metrics->t_reads, ctime(&now)); fflush(stderr);
                 }
             }
         }
@@ -1231,13 +1231,13 @@ void * master_processer_thread(void *a) {
 
         //Store the reads
         if(best_read1) {
-            bam_write1(OUTPUT_BAM, best_read1);
+            sam_write1(OUTPUT_BAM, global_header, best_read1);
             update_counts(best_read1, metrics);
         } else if(config.unmapped) {
             write_unmapped(unmapped1, *node1_read);
         }
         if(best_read2) {
-            bam_write1(OUTPUT_BAM, best_read2);
+            sam_write1(OUTPUT_BAM, global_header, best_read2);
             update_counts(best_read2, metrics);
         } else if(config.unmapped) {
             write_unmapped(unmapped2, *(node1_read+1));
@@ -1273,7 +1273,7 @@ void * master_processer_thread(void *a) {
     //Clean up
     free(*(seq)); free(*(seq+1)); free(seq);
     free(metrics);
-    bam_header_destroy(global_header);
+    bam_hdr_destroy(global_header);
     free(node1_read);
     free(node2_read);
     free(node3_read);

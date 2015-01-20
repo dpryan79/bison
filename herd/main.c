@@ -140,7 +140,7 @@ int main(int argc, char *argv[]) {
     //Deal with MPI initialization, this seems like an odd way to do things.
     MPI_Init_thread(NULL, NULL, MPI_THREAD_MULTIPLE, &provided);
     if(provided != MPI_THREAD_MULTIPLE) {
-        printf("You're MPI implementation doesn't support MPI_THREAD_MULTIPLE, which is required for bison_herd to work.\n");
+        fprintf(stderr, "You're MPI implementation doesn't support MPI_THREAD_MULTIPLE, which is required for bison_herd to work.\n");
         return -1;
     }
 #ifndef DEBUG
@@ -265,7 +265,7 @@ int main(int argc, char *argv[]) {
             chromosomes.max_genome = strtoull(argv[i], NULL, 10);
         } else if(strcmp(argv[i], "--score-min") == 0) {
             i++;
-            if(!config.quiet) printf("Changing --score-min from '%c,%f,%f' to %s!\n", config.scoremin_type, config.scoremin_intercept, config.scoremin_coef, argv[i]);
+            if(!config.quiet) fprintf(stderr, "Changing --score-min from '%c,%f,%f' to %s!\n", config.scoremin_type, config.scoremin_intercept, config.scoremin_coef, argv[i]);
             config.scoremin_type = strtok(argv[i], ",")[0];
             config.scoremin_intercept = (float) atof(strtok(NULL, ","));
             config.scoremin_coef = (float) atof(strtok(NULL, ","));
@@ -276,7 +276,7 @@ int main(int argc, char *argv[]) {
                     config.scoremin_type = 'G';
                     config.scoremin_intercept = 20.0;
                     config.scoremin_coef = 8.0;
-                    if(!config.quiet) printf("Since --local was specified and --score-min was not already changed, changing --score-min to the bowtie2 default of 'G,20,8' (specify --score-min to change this)\n");
+                    if(!config.quiet) fprintf(stderr, "Since --local was specified and --score-min was not already changed, changing --score-min to the bowtie2 default of 'G,20,8' (specify --score-min to change this)\n");
                 }
             }
             if(strcmp(argv[i], "--quiet") == 0) config.quiet = 1; //This also needs to be passed
@@ -292,7 +292,7 @@ int main(int argc, char *argv[]) {
 
     if(config.FASTQ1 == NULL || config.genome_dir == NULL || (config.FASTQ2 == NULL && config.paired == 1)) {
         if(taskid == MASTER) {
-            printf("No FASTQ files!\n");
+            fprintf(stderr, "No FASTQ files!\n");
             usage(argv[0]);
         }
         quit(0, -1);
@@ -302,7 +302,7 @@ int main(int argc, char *argv[]) {
     tmp = strdup(config.FASTQ1);
     p = strtok(tmp, ",");
     if(wordexp(p, &p_wordexp, WRDE_SHOWERR | WRDE_UNDEF) != 0) {
-        printf("There was an error while parsing %s.\n", p);
+        fprintf(stderr, "There was an error while parsing %s.\n", p);
         free(tmp);
         wordfree(&p_wordexp);
         quit(0, -1);
@@ -311,7 +311,7 @@ int main(int argc, char *argv[]) {
     p = strtok(NULL, ",");
     while(p != NULL) {
         if(wordexp(p, &p_wordexp, WRDE_SHOWERR | WRDE_UNDEF | WRDE_REUSE) != 0) {
-            printf("There was an error while parsing %s.\n", p);
+            fprintf(stderr, "There was an error while parsing %s.\n", p);
             free(tmp);
             wordfree(&p_wordexp);
             quit(0, -1);
@@ -324,13 +324,13 @@ int main(int argc, char *argv[]) {
     if(multi_file>1) config.reorder=1; //We need to force --reorder if there are multiple input files
 #ifdef DEBUG
     if(multi_file>1) {
-        printf("In DEBUG mode, you can't input multiple file-sets!\n");
+        fprintf(stderr, "In DEBUG mode, you can't input multiple file-sets!\n");
         quit(0,-1);
     }
 #else
-    if(!config.quiet) printf("%s has rank %i\n", processor_name, taskid); fflush(stdout);
+    if(!config.quiet) fprintf(stderr, "%s has rank %i\n", processor_name, taskid); fflush(stderr);
     if(taskid > effective_nodes()) {
-        printf("From node %i: So long and thanks for all the bits.\n", taskid); fflush(stdout);
+        fprintf(stderr, "From node %i: So long and thanks for all the bits.\n", taskid); fflush(stderr);
         return(-2); //We're an extraneous node
     }
 #endif
@@ -340,12 +340,12 @@ int main(int argc, char *argv[]) {
 
     //Allocate room for the genome, if needed
     if(taskid == MASTER) {
-        if(!config.quiet) printf("Allocating space for %llu characters\n", chromosomes.max_genome);
-        fflush(stdout);
+        if(!config.quiet) fprintf(stderr, "Allocating space for %llu characters\n", chromosomes.max_genome);
+        fflush(stderr);
         chromosomes.genome = malloc(sizeof(char)*chromosomes.max_genome);
         *chromosomes.genome = '\0';
         if(chromosomes.genome == NULL) {
-            printf("Could not allocate enough room to hold the genome!\n");
+            fprintf(stderr, "Could not allocate enough room to hold the genome!\n");
             return -1;
         }
     } else {
@@ -382,7 +382,7 @@ int main(int argc, char *argv[]) {
         ngroups /= 4;
     }
     if(ngroups < 1) {
-        if(taskid == MASTER) printf("There are only %i groups of nodes available!! You need to allocate more nodes (at least 3 for direcional and 5 for non-directional libraries)!\n", ngroups);
+        if(taskid == MASTER) fprintf(stderr, "There are only %i groups of nodes available!! You need to allocate more nodes (at least 3 for direcional and 5 for non-directional libraries)!\n", ngroups);
         quit(0, -1);
     }
     //Yes, these silently change user input
@@ -456,7 +456,7 @@ int main(int argc, char *argv[]) {
         pthread_mutex_destroy(&metrics_mutex);
 
         //Print some metrics
-        bam_header_destroy(global_header);
+        bam_hdr_destroy(global_header);
     } else {
         //Create a temporary directory
         char *tmpdir = malloc(sizeof(char) * (strlen(config.tmpdir) + strlen("/herd_XXXXXX") + 1));
@@ -474,14 +474,14 @@ int main(int argc, char *argv[]) {
         mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
         int rv = mkfifo(silly_struct->fastq1, mode);
         if(rv != 0) {
-            printf("mkfifo returned with status %i!\n", rv);
-            fflush(stdout);
+            fprintf(stderr, "mkfifo returned with status %i!\n", rv);
+            fflush(stderr);
         }
         if(config.paired) {
             rv = mkfifo(silly_struct->fastq2, mode);
             if(rv != 0) {
-                printf("mkfifo returned with status %i!\n", rv);
-                fflush(stdout);
+                fprintf(stderr, "mkfifo returned with status %i!\n", rv);
+                fflush(stderr);
             }
         }
 
@@ -500,14 +500,14 @@ int main(int argc, char *argv[]) {
 #ifdef DEBUG
         pthread_join(threads[1], NULL);
 #endif
-        if(!config.quiet) printf("Returning from worker node %i\n", taskid);
-        fflush(stdout);
+        if(!config.quiet) fprintf(stderr, "Returning from worker node %i\n", taskid);
+        fflush(stderr);
         free(silly_struct->fastq1); //The worker node unlinks this
         free(silly_struct->fastq2); //The worker node unlinks this
         free(silly_struct);
         if(rmdir(tmpdir) != 0) {
-            printf("Couldn't remove %s directory!\n", tmpdir);
-            fflush(stdout);
+            fprintf(stderr,"Couldn't remove %s directory!\n", tmpdir);
+            fflush(stderr);
         }
         free(tmpdir);
         free(threads);

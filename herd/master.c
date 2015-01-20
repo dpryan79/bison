@@ -64,7 +64,7 @@ void * herd_master_processer_thread(void *a) {
             while(!is_ready(nodes[multiplier*j], 0));
             if(is_finished(nodes[multiplier*j])) {
                 quit += 1;
-                if(!config.quiet) printf("Thread %i received a finished signal from node group %i (%i of %i groups are finished)\n", thread_id, j, quit, node_final-node_base); fflush(stdout);
+                if(!config.quiet) fprintf(stderr, "Thread %i received a finished signal from node group %i (%i of %i groups are finished)\n", thread_id, j, quit, node_final-node_base); fflush(stderr);
                 continue;
             }
             *(node1_read) = update_read(nodes[multiplier*j], 0);
@@ -97,7 +97,7 @@ void * herd_master_processer_thread(void *a) {
             if(!config.quiet) {
                 if(++local_total % 100000 == 0) {
                     now = time(NULL);
-                    printf("%llu reads in thread %i @ %s", local_total, thread_id, ctime_r(&now, ctime_buffer)); fflush(stdout);
+                    fprintf(stderr, "%llu reads in thread %i @ %s", local_total, thread_id, ctime_r(&now, ctime_buffer)); fflush(stderr);
                 }
             }
 
@@ -234,7 +234,7 @@ void * herd_master_processer_thread(void *a) {
         free(read->qual2);
     }
     free(read);
-    if(!config.quiet) printf("Thread %i finishing!\n", thread_id); fflush(stdout);
+    if(!config.quiet) fprintf(stderr, "Thread %i finishing!\n", thread_id); fflush(stderr);
 
     return NULL;
 }

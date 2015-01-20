@@ -8,20 +8,12 @@
 #include <pthread.h>
 #include <ctype.h>
 
-#ifdef HTSLIB
 #include <zlib.h>
 #include "htslib/kseq.h"
 #include "htslib/kstring.h"
 #include "htslib/sam.h"
 #include "htslib/hfile.h"
 #include "htslib/bgzf.h"
-#else
-#include <kstring.h>
-#include <bam.h>
-#include <sam_header.h>
-#include <kseq.h>
-#include <khash.h>
-#endif
 
 #include <limits.h>
 #include <inttypes.h>
@@ -37,32 +29,6 @@
 #define BT2BUF_SZ 256 * 1024
 #define THROTTLE_CHECK_INTERVAL 100000 //When bison_herd auto-throttles, this specifies how frequently it should check whether it should do so (units are "reads")
 #define version() printf("Bison, version %s\n", VERSION)
-
-/******************************************
-*
-* Take care of differences between the HTSlib API and that from the original
-* samtools API.
-*
-******************************************/
-#ifdef HTSLIB
-#define KS_BGZF 1
-#define bam_header_t bam_hdr_t
-#define bam_header_init bam_hdr_init
-#define bam_header_write bam_hdr_write
-#define bam_header_read bam_hdr_read
-#define bam_header_destroy bam_hdr_destroy
-#define bam_close(fp) bgzf_close(fp)
-#define bam_open(fn, mode) bgzf_open(fn, mode)
-#define bam1_seq bam_get_seq
-#define bam1_seqi bam_seqi
-#define bam1_qual bam_get_qual
-#define bam1_qname bam_get_qname
-#define bam1_cigar bam_get_cigar
-#define sam_header_read sam_hdr_read
-typedef BGZF * bamFile;
-//This is no longer defined
-static inline uint32_t bam_calend(const bam1_core_t *c, const uint32_t *cigar) { return c->pos + (c->n_cigar? bam_cigar2rlen(c->n_cigar, cigar) : 1); }
-#endif
 
 /******************************************
 *
@@ -82,7 +48,7 @@ FILE *zip1;
 FILE *zip2;
 FILE *unmapped1;
 FILE *unmapped2;
-bamFile OUTPUT_BAM;
+htsFile *OUTPUT_BAM;
 unsigned long long t_reads; //total number of reads
 unsigned long long t_concordant; //Total concordant pairs
 unsigned long long t_discordant; //Total discordant pairs
@@ -101,10 +67,10 @@ unsigned long long m_CHH;
 //This is useful for single-node debugging
 #ifdef DEBUG
 int global_debug_taskid;
-bamFile fp1;
-bamFile fp2;
-bamFile fp3;
-bamFile fp4;
+htsFile *fp1;
+htsFile *fp2;
+htsFile *fp3;
+htsFile *fp4;
 #endif
 
 //Some people may find it useful to have the system throttle itself so as not to overwhelm the MPI buffer
@@ -207,7 +173,7 @@ struct packed_struct {
 
 //Global values
 t_config config;
-bam_header_t *global_header;
+bam_hdr_t *global_header;
 //This will be the global structure for pointers to chromosome_struct's holding the information for *genome
 chromosomes_struct chromosomes;
 char **fnames1, **fnames2; //This will hold the file names so that the writer thread knows what to rename things
@@ -461,7 +427,7 @@ void quit(int, int); //aux.c
 *   bam_header_t *header: The header to store
 *
 *******************************************************************************/
-MPI_Header * pack_header(bam_header_t *); //MPI_packing.c
+MPI_Header * pack_header(bam_hdr_t *); //MPI_packing.c
 
 /******************************************************************************
 *
@@ -471,7 +437,7 @@ MPI_Header * pack_header(bam_header_t *); //MPI_packing.c
 *   void *packed: The packed header
 *
 *******************************************************************************/
-void unpack_header(bam_header_t *, void *); //MPI_packing.c
+void unpack_header(bam_hdr_t *, void *); //MPI_packing.c
 
 /******************************************************************************
 *
@@ -694,11 +660,7 @@ void herd_worker_node(int, char *, char *); //worker.c under herd/
 *   char *cmd: The command given to popen, the mode is always "r".
 *
 *******************************************************************************/
-#ifndef HTSLIB
-tamFile sam_popen(char *); //aux.c
-#else
-samFile * sam_popen(char *); //aux.c
-#endif
+htsFile * sam_popen(char *); //aux.c
 
 /******************************************************************************
 *
@@ -707,8 +669,4 @@ samFile * sam_popen(char *); //aux.c
 *   tamFile fp: The file pointer struct returned from sam_popen
 *
 *******************************************************************************/
-#ifndef HTSLIB
-void sam_pclose(tamFile fp); //aux.c
-#else
 void sam_pclose(samFile *fp);
-#endif

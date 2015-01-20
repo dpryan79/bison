@@ -7,10 +7,10 @@
 *
 *   THE RESULT MUST BE free()d
 *
-*   bam_header_t *header: The header to store
+*   bam_hdr_t *header: The header to store
 *
 *******************************************************************************/
-MPI_Header * pack_header(bam_header_t *header) {
+MPI_Header * pack_header(bam_hdr_t *header) {
     size_t size = sizeof(int32_t); //n_targets
     int32_t *pint32_t;
     uint32_t *puint32_t;
@@ -68,13 +68,13 @@ MPI_Header * pack_header(bam_header_t *header) {
 
 /******************************************************************************
 *
-*   Unpack a header packed into an initialized bam_header_t
+*   Unpack a header packed into an initialized bam_hdr_t
 *
-*   bam_header_t *header: The header to unpack into
+*   bam_hdr_t *header: The header to unpack into
 *   void *packed: The packed header
 *
 *******************************************************************************/
-void unpack_header(bam_header_t *header, void *packed) {
+void unpack_header(bam_hdr_t *header, void *packed) {
     void *p = packed;
     int i;
     int *pint;
@@ -162,12 +162,7 @@ bam1_t *unpack_read(bam1_t *read, void *packed) {
     if(read != NULL) bam_destroy1(read);
     read = bam_init1();
     read->core = pbam1_t->core;
-#ifdef HTSLIB
     read->l_data= pbam1_t->l_data;
-#else
-    read->l_aux = pbam1_t->l_aux;
-    read->data_len= pbam1_t->data_len;
-#endif
     read->m_data = pbam1_t->m_data;
     newdata = (uint8_t *) malloc(read->m_data);
     memcpy((void *) newdata, (void *) pdata, read->m_data);
