@@ -239,7 +239,7 @@ uint64_t mark_dups(alignment *alignments, uint32_t *bitmap, uint64_t total_pairs
 }
 
 void usage(char *prog) {
-    printf("Usage: %s [OPTIONS] input.bam output.bam\n", prog);
+    printf("Usage: %s [OPTIONS] input.{bam|cram} output.{bam|cram}\n", prog);
     printf("\n\
 This program will parse a BAM file produced by bison and mark likely PCR\n\
 duplicates in a new file. A PCR duplicate is defined as two reads/read pairs\n\
@@ -249,6 +249,9 @@ instances of a no-call in one read and a call in the other). The read or pair\n\
 with the greater sum of base-call phred scores is left unmarked. Note that\n\
 soft-clipped bases are included in computing the 5' coordinate of the read,\n\
 as is also the case with picard markDuplicates.\n\
+\n\
+The output file type will be set to match that of the input. That is, if the\n\
+input is a CRAM file, the output will be as well.\n\
 \n\
 N.B., only methylation calls with a phred score of at least 5 are compared.\n\
 \n\
@@ -429,7 +432,7 @@ int main(int argc, char *argv[]) {
             n_compression_threads = atoi(argv[++i]);
         } else if(iname == NULL) {
             iname = argv[i];
-            fp = sam_open(iname, "rb");
+            fp = sam_open(iname, "r");
         } else if(oname == NULL) {
             oname = argv[i];
         } else {
@@ -499,9 +502,10 @@ int main(int argc, char *argv[]) {
     fprintf(stderr, "There were %"PRIu64" duplicates from %"PRIu64" total reads or pairs\n", ndups, total_pairs);
 
     //reopen file, iterate through and change flags as appropriate
-    fp = sam_open(iname, "rb");
+    fp = sam_open(iname, "r");
     header = sam_hdr_read(fp);
-    of = sam_open(oname, "wb");
+    if(fp->is_cram) of = sam_open(oname, "wc"); //Do we need the genome for this?
+    else of = sam_open(oname, "wb");
     if(n_compression_threads > 1) hts_set_threads(of, n_compression_threads);
     sam_hdr_write(of, header);
 

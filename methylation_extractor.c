@@ -746,7 +746,7 @@ void generate_output_names(char *ifile, struct of_struct *of) {
 
     //Generate the basename by stripping off .sam or .bam
     p = strrchr(tmp, '.');
-    if(strcmp(p, ".sam") == 0 || strcmp(p, ".bam") == 0) *p = '\0';
+    if(strcmp(p, ".sam") == 0 || strcmp(p, ".bam") == 0 || strcmp(p, ".cram") == 0) *p = '\0';
     oname = malloc(sizeof(char) * (strlen(tmp) + strlen("_CpG.bedGraph ")));
 
     if(storeCpG) {
@@ -789,7 +789,7 @@ void fill_bounds(char *str, int bounds[4]) {
 }
 
 void usage(char *prog) {
-    printf("Usage: %s [OPTIONS] genome_directory/ input.(sam|bam)\n", prog);
+    printf("Usage: %s [OPTIONS] genome_directory/ input.(sam|bam|cram)\n", prog);
     printf("\n\
     Extract methylation information into a bedGraph file or files. By default,\n\
     only CpG metrics are output\n\
@@ -862,6 +862,7 @@ int main(int argc, char *argv[]) {
     CHGlist = init_list();
     CHHlist = init_list();
     config.genome_dir = NULL;
+    config.fai = NULL;
     chromosomes.max_genome = 3000000000;
     chromosomes.nchromosomes = 0;
     storeCpG = storeCHG = storeCHH = 0;
@@ -940,6 +941,7 @@ int main(int argc, char *argv[]) {
         return -1;
     }
     read_genome();
+    hts_set_fai_filename(fp, config.fai);
 
     //Process the reads
     while(sam_read1(fp, global_header, read1) > 1) {

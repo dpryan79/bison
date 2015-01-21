@@ -28,7 +28,7 @@ void store_calls(unsigned long long *m, unsigned long long *um, bam1_t *read, in
 }
 
 void usage(char *prog) {
-    printf("Usage: %s [OPTIONS] file.bam\n", prog);
+    printf("Usage: %s [OPTIONS] file.{bam|cram}\n", prog);
     printf("\n\
     Compute the methylation percentage as a function of read position for a BAM\n\
     file. The output can be conveniently plotted with the accompanying\n\
@@ -71,7 +71,7 @@ int main(int argc, char *argv[]) {
             usage(argv[0]);
             return 0;
         } else if(prefix == NULL) {
-            ifile = sam_open(argv[i], "rb");
+            ifile = sam_open(argv[i], "r");
             header = sam_hdr_read(ifile);
             prefix = strdup(argv[i]);
         } else {

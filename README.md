@@ -292,6 +292,8 @@ even when limited to the same resources.
      (samtools-0.1.19 is no longer supported).
   *  Somehow, the methylation extractor was still defaulting to a minimum phred
      score of 10, when the documentation said it was defaulting to 5.
+  *  CRAM files can now be produced and processed. Both bison and bison_herd
+     will output in CRAM format if the -C option is given.
 
 ###0.3.3
 
