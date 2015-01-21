@@ -120,6 +120,8 @@ int main(int argc, char *argv[]) {
     config.genome_dir = NULL;
     config.isCRAM = 0;
     config.fai = NULL;
+    config.argc = argc;
+    config.argv = argv;
     chromosomes.max_genome = 3000000000;
     chromosomes.nchromosomes = 0; //We need to initialize the struct
 

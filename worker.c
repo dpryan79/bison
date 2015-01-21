@@ -113,6 +113,7 @@ void worker_node(int thread_id) {
 #endif
 
 #ifndef DEBUG
+    if(thread_id == 1) header = modifyHeader(header, config.argc, config.argv);
     packed_header = pack_header(header);
     if(thread_id == 1) {
         //Send the header

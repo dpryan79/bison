@@ -61,7 +61,7 @@ MPI_Header * pack_header(bam_hdr_t *header) {
     p = (void *) ++pint;
 
     //text
-    memcpy(p, (void *) (header->text), sizeof(char) * (1 + header->l_text));
+    memcpy(p, (void *) (header->text), sizeof(char) * (header->l_text));
 
     return output;
 }

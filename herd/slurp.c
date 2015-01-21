@@ -123,7 +123,7 @@ void *herd_slurp(void *a) {
 #else
 void *herd_slurp(void *a) {
     time_t t0, t1;
-    bamFile fp1, fp2, fp3, fp4, fp5, fp6, fp7, fp8;
+    htsFile *fp1, *fp2, *fp3, *fp4, *fp5, *fp6, *fp7, *fp8;
     char *iname = malloc(sizeof(char) * (1+strlen(config.odir)+strlen(config.basename)+strlen("_X.bam")));
     bam1_t *read = bam_init1();
     bam_hdr_t *tmp;
@@ -132,47 +132,48 @@ void *herd_slurp(void *a) {
 
     //Open the input files and get the header
     sprintf(iname, "%s%s_1.bam", config.odir, config.basename);
-    fp1 = bam_open(iname, "r");
-    global_header = bam_hdr_read(fp1);
+    fp1 = sam_open(iname, "r");
+    global_header = sam_hdr_read(fp1);
     sprintf(iname, "%s%s_2.bam", config.odir, config.basename);
-    fp2 = bam_open(iname, "r");
-    tmp = bam_hdr_read(fp2);
+    fp2 = sam_open(iname, "r");
+    tmp = sam_hdr_read(fp2);
     bam_hdr_destroy(tmp);
     sprintf(iname, "%s%s_3.bam", config.odir, config.basename);
-    fp3 = bam_open(iname, "r");
-    tmp = bam_hdr_read(fp3);
+    fp3 = sam_open(iname, "r");
+    tmp = sam_hdr_read(fp3);
     bam_hdr_destroy(tmp);
     sprintf(iname, "%s%s_4.bam", config.odir, config.basename);
-    fp4 = bam_open(iname, "r");
-    tmp = bam_hdr_read(fp4);
+    fp4 = sam_open(iname, "r");
+    tmp = sam_hdr_read(fp4);
     bam_hdr_destroy(tmp);
     sprintf(iname, "%s%s_5.bam", config.odir, config.basename);
-    fp5 = bam_open(iname, "r");
-    tmp = bam_hdr_read(fp5);
+    fp5 = sam_open(iname, "r");
+    tmp = sam_hdr_read(fp5);
     bam_hdr_destroy(tmp);
     sprintf(iname, "%s%s_6.bam", config.odir, config.basename);
-    fp6 = bam_open(iname, "r");
-    tmp = bam_hdr_read(fp6);
+    fp6 = sam_open(iname, "r");
+    tmp = sam_hdr_read(fp6);
     bam_hdr_destroy(tmp);
     sprintf(iname, "%s%s_7.bam", config.odir, config.basename);
-    fp7 = bam_open(iname, "r");
-    tmp = bam_hdr_read(fp7);
+    fp7 = sam_open(iname, "r");
+    tmp = sam_hdr_read(fp7);
     bam_hdr_destroy(tmp);
     sprintf(iname, "%s%s_8.bam", config.odir, config.basename);
-    fp8 = bam_open(iname, "r");
-    tmp = bam_hdr_read(fp8);
+    fp8 = sam_open(iname, "r");
+    tmp = sam_hdr_read(fp8);
     bam_hdr_destroy(tmp);
     free(iname);
 
 
     //Write a header
-    bam_hdr_write(OUTPUT_BAM, global_header);
+    global_header = modifyHeader(global_header, config.argc, config.argv);
+    sam_hdr_write(OUTPUT_BAM, global_header);
     packed->size = 0;
 
     t0 = time(NULL);
     if(!config.quiet) fprintf(stderr, "Started slurping @%s", ctime(&t0)); fflush(stderr);
 
-    while(bam_read1(fp1, read) > 1) {
+    while(sam_read1(fp1, global_header, read) > 1) {
         packed->packed = NULL;
         packed->size = 0;
         packed = pack_read(read, packed);
@@ -180,7 +181,7 @@ void *herd_slurp(void *a) {
         add_element(target_node, packed->packed);
 
         //Node2
-        bam_read1(fp2, read);
+        sam_read1(fp2, global_header, read);
         packed->packed = NULL;
         packed->size = 0;
         packed = pack_read(read, packed);
@@ -188,7 +189,7 @@ void *herd_slurp(void *a) {
         add_element(target_node, packed->packed);
 
         //Node3
-        bam_read1(fp3, read);
+        sam_read1(fp3, global_header, read);
         packed->packed = NULL;
         packed->size = 0;
         packed = pack_read(read, packed);
@@ -196,7 +197,7 @@ void *herd_slurp(void *a) {
         add_element(target_node, packed->packed);
 
         //Node4
-        bam_read1(fp4, read);
+        sam_read1(fp4, global_header, read);
         packed->packed = NULL;
         packed->size = 0;
         packed = pack_read(read, packed);
@@ -204,7 +205,7 @@ void *herd_slurp(void *a) {
         add_element(target_node, packed->packed);
 
         //Node5
-        bam_read1(fp5, read);
+        sam_read1(fp5, global_header, read);
         packed->packed = NULL;
         packed->size = 0;
         packed = pack_read(read, packed);
@@ -212,7 +213,7 @@ void *herd_slurp(void *a) {
         add_element(target_node, packed->packed);
 
         //Node6
-        bam_read1(fp6, read);
+        sam_read1(fp6, global_header, read);
         packed->packed = NULL;
         packed->size = 0;
         packed = pack_read(read, packed);
@@ -220,7 +221,7 @@ void *herd_slurp(void *a) {
         add_element(target_node, packed->packed);
 
         //Node7
-        bam_read1(fp7, read);
+        sam_read1(fp7, global_header, read);
         packed->packed = NULL;
         packed->size = 0;
         packed = pack_read(read, packed);
@@ -228,7 +229,7 @@ void *herd_slurp(void *a) {
         add_element(target_node, packed->packed);
 
         //Node8
-        bam_read1(fp8, read);
+        sam_read1(fp8, global_header, read);
         packed->packed = NULL;
         packed->size = 0;
         packed = pack_read(read, packed);
@@ -237,14 +238,14 @@ void *herd_slurp(void *a) {
     }
     free(packed);
     bam_destroy1(read);
-    bam_close(fp1);
-    bam_close(fp2);
-    bam_close(fp3);
-    bam_close(fp4);
-    bam_close(fp5);
-    bam_close(fp6);
-    bam_close(fp7);
-    bam_close(fp8);
+    sam_close(fp1);
+    sam_close(fp2);
+    sam_close(fp3);
+    sam_close(fp4);
+    sam_close(fp5);
+    sam_close(fp6);
+    sam_close(fp7);
+    sam_close(fp8);
 
     target_node = last_sentinel_node[0];
     add_finished(target_node);

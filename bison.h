@@ -26,7 +26,7 @@
 
 #define MAXREAD 1024
 #define MASTER 0
-#define VERSION "0.3.3"
+#define VERSION "0.4.0"
 #define BT2BUF_SZ 256 * 1024
 #define THROTTLE_CHECK_INTERVAL 100000 //When bison_herd auto-throttles, this specifies how frequently it should check whether it should do so (units are "reads")
 #define version() printf("Bison, version %s\n", VERSION)
@@ -127,6 +127,8 @@ typedef struct {
     float scoremin_intercept;
     float scoremin_coef;
     int isCRAM;
+    char **argv;
+    int argc;
 } t_config;
 
 typedef struct {
@@ -389,6 +391,13 @@ void create_fastq_names(char *, char*); //fastq.c
 *
 *******************************************************************************/
 void read_genome(); //common.c
+
+/*******************************************************************************
+*
+*  Replace the @PG line in the header with the actual comman executed
+*
+*******************************************************************************/
+bam_hdr_t *modifyHeader(bam_hdr_t *hdr, int argc, char *argv[]);
 
 /******************************************************************************
 *

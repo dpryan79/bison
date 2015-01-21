@@ -2,6 +2,43 @@
 
 /*******************************************************************************
 *
+*  Replace the @PG line in the header with the actual comman executed
+*
+*******************************************************************************/
+bam_hdr_t *modifyHeader(bam_hdr_t *hdr, int argc, char *argv[]) {
+    int i;
+    size_t alen, clen;
+    char *PG = hdr->text;
+ 
+    //Point PG to the PG line (if it exists)
+    for(i=0; i<hdr->l_text; i++) {
+        PG++;
+        if(strncmp(PG, "@PG", 3) == 0) break;
+    }
+    clen = PG-hdr->text;
+
+    //calculate the additional length
+    alen = strlen("@PG\tID:\t") + strlen(argv[0]) + strlen("\tVN:") + strlen(VERSION) + strlen("\tCL\"\"");
+    for(i=0; i<argc; i++) alen += strlen(argv[i])+1;
+    hdr->text = realloc(hdr->text, sizeof(char)*(clen+alen));
+    hdr->l_text = alen+clen;
+    PG = hdr->text+clen;
+
+    //Append
+    *PG = '\0';
+    sprintf(hdr->text, "%s@PG\tID:%s\tVN:%s\tCL:\"", hdr->text, argv[0], VERSION);
+    for(i=0; i<argc; i++) {
+        hdr->text = strcat(hdr->text, argv[i]);
+        hdr->text = strcat(hdr->text, " ");
+    }
+    hdr->text[hdr->l_text-2] = '\"';
+    hdr->text[hdr->l_text-1] = '\n';
+
+    return hdr;
+}
+
+/*******************************************************************************
+*
 *  Create a position array to account for any InDels
 *  This function assumes that the first base is not marked as an InDel or
 *  clipped in any way. If that occurs then things will break.

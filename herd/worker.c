@@ -242,10 +242,10 @@ void herd_worker_node(int thread_id, char *fastq1, char *fastq2) {
 #ifdef DEBUG
     MPI_Status stat;
     int current_p_size = 100;
-    bamFile of;
+    htsFile *of;
     bam_hdr_t *debug_header = bam_hdr_init();
     bam1_t *debug_read = bam_init1();
-    global_header = bam_header_init();
+    global_header = bam_hdr_init();
     void *p = calloc(100,1);
     char *oname = NULL;
 #else
@@ -276,7 +276,7 @@ void herd_worker_node(int thread_id, char *fastq1, char *fastq2) {
     oname = malloc(sizeof(char) *(1+strlen(config.odir)+strlen(config.basename)+strlen("_X.bam")));
     sprintf(oname, "%s%s_%i.bam", config.odir, config.basename, thread_id);
     if(!config.quiet) fprintf(stderr, "Writing output to %s\n", oname);
-    of = bam_open(oname, "w");
+    of = sam_open(oname, "wb");
     free(oname);
 #endif
 
@@ -315,7 +315,7 @@ void herd_worker_node(int thread_id, char *fastq1, char *fastq2) {
     fp = sam_popen(cmd);
     header = sam_hdr_read(fp);
 #ifdef DEBUG
-    bam_hdr_write(of, header);
+    sam_hdr_write(of, header);
 #endif
 
 #ifndef DEBUG
@@ -346,13 +346,13 @@ void herd_worker_node(int thread_id, char *fastq1, char *fastq2) {
     if(!config.quiet) fprintf(stderr, "Node %i began sending reads @%s", thread_id, ctime(&t0)); fflush(stderr);
     while(sam_read1(fp, header, read1) >= 0) {
 #ifdef DEBUG
-        bam_write1(of, read1);
+        sam_write1(of, global_header, read1);
 #endif
         if(strcmp(bam_get_qname(read1), last_qname) == 0) { //Multimapper
             if(config.paired) {
                 sam_read1(fp, header, read2);
 #ifdef DEBUG
-                bam_write1(of, read2);
+                sam_write1(of, global_header, read2);
 #endif
             }
             continue;
@@ -374,7 +374,7 @@ void herd_worker_node(int thread_id, char *fastq1, char *fastq2) {
 #ifndef DEBUG
                 MPI_Send((void *) packed_read->packed, packed_read->size, MPI_BYTE, 0, 5, MPI_COMM_WORLD);
 #else
-                bam_write1(of, read2);
+                sam_write1(of, global_header, read2);
                 if(packed_read->size > current_p_size) p = realloc(p, packed_read->size);
                 MPI_Isend((void *) packed_read->packed, packed_read->size, MPI_BYTE, 0, 5, MPI_COMM_WORLD, &request);
                 status = MPI_Recv(p, packed_read->size, MPI_BYTE, 0, 5, MPI_COMM_WORLD, &stat);
@@ -401,7 +401,7 @@ void herd_worker_node(int thread_id, char *fastq1, char *fastq2) {
 #ifndef DEBUG
             MPI_Send((void *) packed_read->packed, packed_read->size, MPI_BYTE, 0, 5, MPI_COMM_WORLD);
 #else
-            bam_write1(of, read2);
+            sam_write1(of, global_header, read2);
             if(packed_read->size > current_p_size) p = realloc(p, packed_read->size);
             MPI_Isend((void *) packed_read->packed, packed_read->size, MPI_BYTE, 0, 5, MPI_COMM_WORLD, &request);
             status = MPI_Recv(p, packed_header->size, MPI_BYTE, 0, 5, MPI_COMM_WORLD, &stat);
@@ -439,7 +439,7 @@ void herd_worker_node(int thread_id, char *fastq1, char *fastq2) {
     unlink(fastq1);
     if(config.paired) unlink(fastq2);
 #ifdef DEBUG
-    bam_close(of);
+    sam_close(of);
     bam_hdr_destroy(debug_header);
     bam_destroy1(debug_read);
     free(p);

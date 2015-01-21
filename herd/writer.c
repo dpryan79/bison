@@ -70,6 +70,7 @@ void herd_setup(char *fname1, char *fname2) {
     }
     if(!config.quiet) fprintf(stderr, "Alignments will be written to %s\n",config.outname);
     if(config.n_compression_threads > 1) hts_set_threads(OUTPUT_BAM, config.n_compression_threads);
+    global_header = modifyHeader(global_header, config.argc, config.argv);
     sam_hdr_write(OUTPUT_BAM, global_header);
     if(!config.quiet) fprintf(stderr, "Alignment metrics will be printed to %s%s.txt\n",config.odir,config.basename);
     fflush(stderr);

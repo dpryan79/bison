@@ -287,13 +287,19 @@ even when limited to the same resources.
 
   *  Allow lower case reads in fastq files (previously, this would result in
      corrupt BAM files.
+
   *  HTSlib is now a submodule in the Github repository. This simplifies
      compilation. Further, that is the only supported compilation method now
      (samtools-0.1.19 is no longer supported).
+
   *  Somehow, the methylation extractor was still defaulting to a minimum phred
      score of 10, when the documentation said it was defaulting to 5.
+
   *  CRAM files can now be produced and processed. Both bison and bison_herd
      will output in CRAM format if the -C option is given.
+
+  *  The header @PG line is now rewritten to contain the actual command
+     executed and the bison/herd version.
 
 ###0.3.3
 

@@ -171,6 +171,8 @@ int main(int argc, char *argv[]) {
     config.genome_dir = NULL;
     config.isCRAM = 0;
     config.fai = NULL;
+    config.argc = argc;
+    config.argv = argv;
     global_header = NULL;
     unmapped1 = NULL;
     unmapped2 = NULL;
