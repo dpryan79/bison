@@ -95,6 +95,7 @@ void * bam_writer(void *a) {
     bam1_t *best_read1 = NULL;
     time_t now;
     char ctime_buffer[26];
+    alignmentBuffer *abuf = NULL;
 
     //If we write output in the exact same order as the input, we need to know
     //how many times to write from each master_processor_thread before going to the next
@@ -109,6 +110,12 @@ void * bam_writer(void *a) {
     //Sleep until we've received the global header
     while(global_header == NULL) sleep(1);
     herd_setup(fnames1[current_file], fnames2[current_file]); //Setup the various names
+
+    if(config.sort) {
+        abuf = calloc(1, sizeof(alignmentBuffer));
+        abuf->maxMem = config.maxMem;
+        abuf->opref = strdup(config.basename);
+    }
 
     while(nfinished < config.nmthreads) {
         for(i=0; i<config.nmthreads; i++) {
@@ -134,9 +141,11 @@ void * bam_writer(void *a) {
                     if(is_finished(to_write_node[i])) goto finished;
                     if(unmapped1 != NULL) pclose(unmapped1);
                     if(unmapped2 != NULL) pclose(unmapped2);
+                    if(config.sort) mergeTemp(abuf); //This ends up blocking until the merge is complete
                     sam_close(OUTPUT_BAM);
                     current_file++;
                     herd_setup(fnames1[current_file], fnames2[current_file]);
+                    if(config.sort) abuf->opref = strdup(config.basename);
                     i=0;
                     j=0;
                 }
@@ -164,7 +173,8 @@ void * bam_writer(void *a) {
                 }
                 best_read1 = to_write_node[i]->next->packed;
                 if(!(best_read1->core.flag & BAM_FUNMAP)) {
-                    sam_write1(OUTPUT_BAM, global_header, best_read1);
+                    if(config.sort) pushAlignmentBuffer(abuf, bam_dup1(best_read1));
+                    else sam_write1(OUTPUT_BAM, global_header, best_read1);
                     herd_update_counts(best_read1);
                 } else {
                     if(config.unmapped) {
@@ -189,6 +199,12 @@ void * bam_writer(void *a) {
 
 //This isn't elegant, but...
 finished:
+    if(config.sort) {
+        mergeTemp(abuf);
+        free(abuf->buf);
+        free(abuf);
+    }
+
     if(t_reads != 0) print_metrics(); //There seems to be a race condition for the last sample in a list. This gets around that.
     now = time(NULL);
     if(!config.quiet) fprintf(stderr, "Finished writing output @%s", ctime_r(&now, ctime_buffer)); fflush(stderr);
