@@ -12,8 +12,8 @@ bam_hdr_t *modifyHeader(bam_hdr_t *hdr, int argc, char *argv[]) {
  
     //Point PG to the PG line (if it exists)
     for(i=0; i<hdr->l_text; i++) {
-        PG++;
         if(strncmp(PG, "@PG", 3) == 0) break;
+        PG++;
     }
     clen = PG-hdr->text;
 
@@ -33,6 +33,34 @@ bam_hdr_t *modifyHeader(bam_hdr_t *hdr, int argc, char *argv[]) {
     }
     hdr->text[hdr->l_text-2] = '\"';
     hdr->text[hdr->l_text-1] = '\n';
+
+    if(config.sort) return modifyHeaderSorted(hdr);
+
+    return hdr;
+}
+
+/*******************************************************************************
+*
+*  Alter a header to note that it's sorted
+*
+*******************************************************************************/
+bam_hdr_t *modifyHeaderSorted(bam_hdr_t *hdr) {
+    char *SQ = hdr->text, *text;
+    int i;
+    size_t clen, alen = strlen("@HD\tVN:1.3\tSO:coordinate\n");
+
+    for(i=0; i<hdr->l_text; i++) {
+        if(strncmp(SQ, "@SQ", 3) == 0) break;
+        SQ++;
+    }
+    clen = hdr->l_text - i;
+
+    text = malloc(clen+alen);
+    hdr->l_text = alen+clen;
+    snprintf(text, alen+clen, "@HD\tVN:1.3\tSO:coordinate\n%s", SQ);
+    text[hdr->l_text-1] = '\n'; //Null termination? We don't need no stinkin null termination!
+    free(hdr->text);
+    hdr->text = text;
 
     return hdr;
 }
