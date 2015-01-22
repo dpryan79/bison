@@ -129,6 +129,8 @@ typedef struct {
     int isCRAM;
     char **argv;
     int argc;
+    uint64_t maxMem;
+    int sort; //To sort or not
 } t_config;
 
 typedef struct {
@@ -682,3 +684,47 @@ htsFile * sam_popen(char *); //aux.c
 *
 *******************************************************************************/
 void sam_pclose(samFile *fp);
+
+//Sorting stuff
+typedef struct {
+    uint32_t l,m; //Current and max buffer length
+    uint64_t curMem, maxMem; //Current and maximum permitted memory usage
+    int offset; //File number offset for the temp files
+    char *opref; //output file name prefix
+    bam1_t **buf; //alignment buffer
+} alignmentBuffer;
+
+/******************************************************************************
+*
+*   Push an alignment onto an alignmentBuffer struct 
+*
+*   alignmentBuffer *buf: the alignmentBuffer
+*   bam1_t *b: the alignment
+*
+*   returns the modified buffer. If we would have hit maxMem, then the buffer
+*   is written out to temp files as appropriate.
+*
+*******************************************************************************/
+alignmentBuffer *pushAlignmentBuffer(alignmentBuffer *buf, bam1_t *b);
+
+/******************************************************************************
+*
+*   Merge temp files created by an alignment buffer. This will write any
+*   remaining alignments to temp files.
+*
+*   alignmentBuffer *buf: the alignmentBuffer
+*
+*   Note that the buffer is modified so it can be resused.
+*
+*******************************************************************************/
+void mergeTemp(alignmentBuffer *buf);
+
+/*******************************************************************************
+*
+*   Parse a memory amount specified like 2G, or 1.5M
+*
+*   char *str: The string to parse
+*
+*   Returns the number of bytes represented by the string
+*******************************************************************************/
+uint64_t str2Mem(char *s);

@@ -1128,6 +1128,13 @@ void * master_processer_thread(void *a) {
     bam1_t **node4_read = malloc(sizeof(bam1_t*) * 2);
     bam1_t *best_read1 = NULL, *best_read2 = NULL;
     time_t now;
+    alignmentBuffer *abuf = NULL;
+
+    if(config.sort) {
+        abuf = calloc(1, sizeof(alignmentBuffer));
+        abuf->maxMem = config.maxMem;
+        abuf->opref = strdup(config.basename);
+    }
 
     //Metrics
     metrics_struct *metrics = calloc(1,sizeof(metrics_struct));
@@ -1231,13 +1238,15 @@ void * master_processer_thread(void *a) {
 
         //Store the reads
         if(best_read1) {
-            sam_write1(OUTPUT_BAM, global_header, best_read1);
+            if(config.sort) pushAlignmentBuffer(abuf, bam_dup1(best_read1));
+            else sam_write1(OUTPUT_BAM, global_header, best_read1);
             update_counts(best_read1, metrics);
         } else if(config.unmapped) {
             write_unmapped(unmapped1, *node1_read);
         }
         if(best_read2) {
-            sam_write1(OUTPUT_BAM, global_header, best_read2);
+            if(config.sort) pushAlignmentBuffer(abuf, bam_dup1(best_read2));
+            else sam_write1(OUTPUT_BAM, global_header, best_read2);
             update_counts(best_read2, metrics);
         } else if(config.unmapped) {
             write_unmapped(unmapped2, *(node1_read+1));
@@ -1253,6 +1262,8 @@ void * master_processer_thread(void *a) {
             }
         }
     }
+
+    if(config.sort) mergeTemp(abuf);
 
     //Update the global metrics
     t_reads += metrics->t_reads;
@@ -1271,6 +1282,10 @@ void * master_processer_thread(void *a) {
     m_CHH += metrics->m_CHH;
 
     //Clean up
+    if(config.sort) {
+        free(abuf->buf);
+        free(abuf);
+    }
     free(*(seq)); free(*(seq+1)); free(seq);
     free(metrics);
     bam_hdr_destroy(global_header);

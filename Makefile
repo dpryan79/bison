@@ -12,7 +12,7 @@ MPI = -lmpi #This is usually appropriate for openmpi
 
 #Don't edit below here unless you know what you're doing!
 
-OBJS = aux.o fastq.o genome.o slurp.o master.o common.o MPI_packing.o worker.o
+OBJS = aux.o fastq.o genome.o slurp.o master.o common.o MPI_packing.o worker.o sort.o
 HERD_OBJS = herd/fastq.o herd/master.o herd/MPI_packing.o herd/slurp.o herd/worker.o herd/writer.o
 
 .SUFFIXES:.c .o

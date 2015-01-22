@@ -24,6 +24,17 @@ void usage(char *prog) {
 \n\
 -C          Output CRAM rather than BAM.\n\
 \n\
+--sort      Sort the output by coordinate. Note that bison_markduplicates and\n\
+            bison_methylation_extractor are not able to process coordinate\n\
+            sorted files.\n\
+\n\
+-m          The amount of memory to use per-thread for sorting (only used if\n\
+            --sort is specified). The formatting is the same as for\n\
+            'samtools sort', so 2G specifies 2 gigabytes and 1K one kilobyte.\n\
+            Accepted suffixes are K, M, and G. Note that without one of these\n\
+            suffixes, the value is assumed to specify the number of bytes. The\n\
+            default is 512M.\n\
+\n\
 -o          Output directory. By default, everything will be written to the\n\
             directory holding the fastq files (or the file containing read #1,\n\
             as appropriate). If you would prefer for the output BAM file and\n\
@@ -122,6 +133,9 @@ int main(int argc, char *argv[]) {
     config.fai = NULL;
     config.argc = argc;
     config.argv = argv;
+    config.maxMem = 512<<20;
+    config.sort = 0;
+    config.n_compression_threads = 1;
     chromosomes.max_genome = 3000000000;
     chromosomes.nchromosomes = 0; //We need to initialize the struct
 
@@ -172,6 +186,10 @@ int main(int argc, char *argv[]) {
             config.nthreads = atoi(argv[i]);
         } else if(strcmp(argv[i], "-C") == 0) {
             config.isCRAM = 1;
+        } else if(strcmp(argv[i], "-m") == 0) {
+            config.maxMem = str2Mem(argv[++i]);
+        } else if(strcmp(argv[i], "--sort") == 0) {
+            config.sort = 1;
         } else if(strcmp(argv[i], "-o") == 0) {
             i++;
             config.odir = strdup(argv[i]);
