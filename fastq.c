@@ -3,6 +3,7 @@
 char * reverse_qual(char *qual) {
     char *output = malloc(sizeof(char)*(1+strlen(qual)));
     int i, j;
+    assert(output);
     for(i=0, j=strlen(qual)-1; i<strlen(qual); i++, j--) *(output+i) = *(qual+j);
     *(output+i) = '\0';
     free(qual);
@@ -22,6 +23,8 @@ void write_unmapped(FILE *fp, bam1_t *read) {
     char *qual = calloc(1+read->core.l_qseq, sizeof(char));
     uint8_t b, *seqp = bam_get_seq(read), *qualp = bam_get_qual(read);
     int i;
+    assert(seq);
+    assert(qual);
 
     for(i=0; i<read->core.l_qseq; i++) {
         b = bam_seqi(seqp, i);
@@ -62,11 +65,13 @@ void update_odir() {
             config.odir = tmp;
         } else {
             config.odir = malloc(sizeof(char) * 3);
+            assert(config.odir);
             sprintf(config.odir, "./");
         }
     } else {
         if(config.odir[strlen(config.odir)-1] != '/') {
             config.odir = realloc(config.odir, (strlen(config.odir)+2) * sizeof(char));
+            assert(config.odir);
             strcat(config.odir, "/");
         }
     }
@@ -83,6 +88,7 @@ void update_odir() {
 char * get_basename(char *file) {
     char *output = malloc(sizeof(char) * (strlen(file) + 1));
     char *p = NULL;
+    assert(output);
 
     //Create the basename of the input
     strcpy(output, file);
@@ -122,6 +128,7 @@ void * convert1(void *a) {
     unsigned int limit = *((unsigned int *) a);
     int i;
     char *p;
+    assert(cmd);
 
     //Determine how we should read in the file
     p = strrchr(config.FASTQ1, '.');
@@ -136,6 +143,7 @@ void * convert1(void *a) {
 
     //CT
     cmd = realloc(cmd,sizeof(char) * (strlen(config.FASTQ1CT) + 8));
+    assert(cmd);
     sprintf(cmd, "gzip > %s", config.FASTQ1CT);
     of1 = popen(cmd, "w");
 
@@ -192,6 +200,7 @@ void * convert2(void *a) {
     unsigned int limit = *((unsigned int *) a);
     int i;
     char *p;
+    assert(cmd);
 
     //Determine how we should read in the file
     p = strrchr(config.FASTQ2, '.');
@@ -206,6 +215,7 @@ void * convert2(void *a) {
 
     //GA
     cmd = realloc(cmd, sizeof(char) * (strlen(config.FASTQ2GA) + 8));
+    assert(cmd);
     sprintf(cmd, "gzip > %s", config.FASTQ2GA);
     of1 = popen(cmd, "w");
 
@@ -278,6 +288,7 @@ void convert_fastq(int FLAGS, unsigned int limit) {
 
     if(config.paired) {
         threads = calloc(2, sizeof(pthread_t));
+        assert(threads);
         rc = pthread_create(&(threads[0]), NULL, convert1, (void *) &limit);
         if(rc) {
             fprintf(stderr, "An error occured with invoking pthread_create; %d\n", rc);
@@ -290,6 +301,7 @@ void convert_fastq(int FLAGS, unsigned int limit) {
         }
     } else {
         threads = calloc(1, sizeof(pthread_t));
+        assert(threads);
         rc = pthread_create(&(threads[0]), NULL, convert1, (void *) &limit);
         if(rc) {
             fprintf(stderr, "An error occured with invoking pthread_create; %d\n", rc);
@@ -313,10 +325,12 @@ void create_fastq_names(char *f1, char *f2) {
     char *basename1 = malloc(sizeof(char) * (strlen(f1) + 20));
     char *basename2 = NULL;
     char *p;
+    assert(basename1);
 
     basename1 = strcpy(basename1, f1);
     if(config.paired) {
         basename2 = malloc(sizeof(char) * (strlen(f2) + 20));
+        assert(basename2);
         basename2 = strcpy(basename2, f2);
     }
 
@@ -332,7 +346,9 @@ void create_fastq_names(char *f1, char *f2) {
         }
     }
     config.FASTQ1CT = malloc(sizeof(char) * (strlen(basename1) + 10));
+    assert(config.FASTQ1CT);
     config.FASTQ1GA = malloc(sizeof(char) * (strlen(basename1) + 10));
+    assert(config.FASTQ1GA);
     if(config.odir != NULL) {
         p = strrchr(basename1, '/');
         if(p!=NULL) {
@@ -341,9 +357,11 @@ void create_fastq_names(char *f1, char *f2) {
             p = basename1;
         }
         config.unmapped1 = malloc(sizeof(char) * (strlen(config.odir) + strlen(p) + strlen(".unmapped.fq.gz") + 1));
+        assert(config.unmapped1);
         sprintf(config.unmapped1, "%s%s.unmapped.fq.gz", config.odir, p);
     } else {
         config.unmapped1 = malloc(sizeof(char) * (strlen(basename1) + strlen(".unmapped.fq.gz") + 1));
+        assert(config.unmapped1);
         sprintf(config.unmapped1, "%s.unmapped.fq.gz", basename1);
     }
     sprintf(config.FASTQ1CT, "%s.CT.fq.gz", basename1);
@@ -362,7 +380,9 @@ void create_fastq_names(char *f1, char *f2) {
             }
         }
         config.FASTQ2CT = malloc(sizeof(char) * (strlen(basename2) + 10));
+        assert(config.FASTQ2CT);
         config.FASTQ2GA = malloc(sizeof(char) * (strlen(basename2) + 10));
+        assert(config.FASTQ2GA);
         if(config.odir != NULL) {
             p = strrchr(basename2, '/');
             if(p!=NULL) {
@@ -371,9 +391,11 @@ void create_fastq_names(char *f1, char *f2) {
                 p = basename2;
             }
             config.unmapped2 = malloc(sizeof(char) * (strlen(config.odir) + strlen(p) + strlen(".unmapped.fq.gz") + 1));
+            assert(config.unmapped2);
             sprintf(config.unmapped2, "%s%s.unmapped.fq.gz", config.odir, p);
         } else {
             config.unmapped2 = malloc(sizeof(char) * (strlen(basename2) + strlen(".unmapped.fq.gz") + 1));
+            assert(config.unmapped2);
             sprintf(config.unmapped2, "%s.unmapped.fq.gz", basename2);
         }
         sprintf(config.FASTQ2CT, "%s.CT.fq.gz", basename2);

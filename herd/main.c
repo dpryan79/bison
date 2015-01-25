@@ -166,6 +166,7 @@ int main(int argc, char *argv[]) {
     config.directional = 0; //Default is non-directional
     config.nthreads = 11; //Default is 11 threads/node
     config.bowtie2_options = calloc(MAXREAD, sizeof(char));
+    assert(config.bowtie2_options);
     config.unmapped = 0; //By default, unmapped reads are NOT written to a fastq file
     config.scoremin_type = 'L'; //--score-min 'L,-0.6,-0.6'
     config.scoremin_intercept = -0.6;
@@ -242,6 +243,7 @@ int main(int argc, char *argv[]) {
             config.genome_dir = strdup(argv[i]);
             if(*(config.genome_dir+strlen(config.genome_dir)-1) != '/') {
                 config.genome_dir = realloc(config.genome_dir, sizeof(char) * (strlen(config.genome_dir)+2));
+                assert(config.genome_dir);
                 sprintf(config.genome_dir, "%s/", config.genome_dir);
             }
         } else if(strcmp(argv[i], "-p") == 0) {
@@ -294,6 +296,17 @@ int main(int argc, char *argv[]) {
             config.scoremin_type = strtok(argv[i], ",")[0];
             config.scoremin_intercept = (float) atof(strtok(NULL, ","));
             config.scoremin_coef = (float) atof(strtok(NULL, ","));
+        } else if(strncmp(argv[i], "--rg", 4) == 0) {
+            if(strlen(config.bowtie2_options) + strlen(argv[i]) + strlen(argv[i+1]) + 5 >= bowtie2_options_max) {
+                bowtie2_options_max = strlen(config.bowtie2_options) + strlen(argv[i]) + strlen(argv[i+1]) + 105;
+                config.bowtie2_options = realloc(config.bowtie2_options, sizeof(char)*bowtie2_options_max);
+                assert(config.bowtie2_options);
+            }
+            strcat(config.bowtie2_options, " ");
+            strcat(config.bowtie2_options, argv[i]);
+            strcat(config.bowtie2_options, " \"");
+            strcat(config.bowtie2_options, argv[++i]);
+            strcat(config.bowtie2_options, "\"");
         } else {
             if(strcmp(argv[i], "--local") == 0 || strcmp(argv[i], "--very-fast-local") == 0 || strcmp(argv[i], "--fast-local") == 0 || strcmp(argv[i], "--sensitive-local") == 0 || strcmp(argv[i], "--very-sensitive-local") == 0) {
                 config.mode = 1;
@@ -309,6 +322,7 @@ int main(int argc, char *argv[]) {
             if(strlen(config.bowtie2_options) + 1 + strlen(argv[i]) >= bowtie2_options_max) {
                 bowtie2_options_max = strlen(config.bowtie2_options) + 1 + strlen(argv[i]) + 100;
                 config.bowtie2_options = realloc(config.bowtie2_options, sizeof(char) * bowtie2_options_max);
+                assert(config.bowtie2_options);
             }
             strcat(config.bowtie2_options, " ");
             strcat(config.bowtie2_options, argv[i]);
@@ -368,6 +382,7 @@ int main(int argc, char *argv[]) {
         if(!config.quiet) fprintf(stderr, "Allocating space for %llu characters\n", chromosomes.max_genome);
         fflush(stderr);
         chromosomes.genome = malloc(sizeof(char)*chromosomes.max_genome);
+        assert(chromosomes.genome);
         *chromosomes.genome = '\0';
         if(chromosomes.genome == NULL) {
             fprintf(stderr, "Could not allocate enough room to hold the genome!\n");
@@ -385,6 +400,10 @@ int main(int argc, char *argv[]) {
         fnames1 = calloc(multi_file, sizeof(char *));
         fnames2 = calloc(multi_file, sizeof(char *));
         flengths = calloc(multi_file, sizeof(unsigned long long));
+        assert(nwritten);
+        assert(fnames1);
+        assert(fnames2);
+        assert(flengths);
 #ifndef DEBUG
     }
 #endif
@@ -393,6 +412,7 @@ int main(int argc, char *argv[]) {
     if(strlen(config.bowtie2_options) + 1000 >= bowtie2_options_max) {
         bowtie2_options_max = strlen(config.bowtie2_options) + 1000; //This should suffice
         config.bowtie2_options = realloc(config.bowtie2_options, sizeof(char) * bowtie2_options_max);
+        assert(config.bowtie2_options);
     }
     if(strlen(config.bowtie2_options) > 0) {
         sprintf(config.bowtie2_options, "%s -p %i --score-min '%c,%g,%g'", config.bowtie2_options, config.nthreads, config.scoremin_type, config.scoremin_intercept, config.scoremin_coef);
@@ -419,6 +439,7 @@ int main(int argc, char *argv[]) {
     update_odir();
     config.basename = get_basename(config.FASTQ1);
     config.outname = malloc(sizeof(char)*(strlen(config.odir)+ strlen(config.basename)+5));
+    assert(config.outname);
     sprintf(config.outname, "%s%s.bam", config.odir, config.basename);
     if(taskid == MASTER) {
 #else
@@ -440,6 +461,12 @@ int main(int argc, char *argv[]) {
         last_fastq_sentinel_node = malloc(sizeof(struct packed_struct *)*ngroups);
         to_write_node = malloc(sizeof(struct packed_struct *)*config.nmthreads);
         to_write_sentinel_node = malloc(sizeof(struct packed_struct *)*config.nmthreads);
+        assert(nodes);
+        assert(last_sentinel_node);
+        assert(fastq_nodes);
+        assert(last_fastq_sentinel_node);
+        assert(to_write_node);
+        assert(to_write_sentinel_node);
         for(i=0; i<effective_nodes(); i++) {
             nodes[i] = initialize_list(nodes[i]);
             last_sentinel_node[i] = nodes[i]->next;
@@ -456,6 +483,8 @@ int main(int argc, char *argv[]) {
         //Start the master node processer threads
         threads = calloc(2+config.nmthreads, sizeof(pthread_t));
         int *threadids = malloc(sizeof(int)*config.nmthreads);
+        assert(threads);
+        assert(threadids);
         pthread_create(&(threads[0]), NULL, &send_store_fastq, (void *) &upto);
         for(i=0; i<config.nmthreads; i++) {
             *(threadids+i) = i;
@@ -485,14 +514,18 @@ int main(int argc, char *argv[]) {
     } else {
         //Create a temporary directory
         char *tmpdir = malloc(sizeof(char) * (strlen(config.tmpdir) + strlen("/herd_XXXXXX") + 1));
+        assert(tmpdir);
         sprintf(tmpdir, "%s/herd_XXXXXX", config.tmpdir);
         tmpdir = mkdtemp(tmpdir);
 
         //Name the FIFOs
         slurp_fastq_struct *silly_struct = malloc(sizeof(slurp_fastq_struct));
+        assert(silly_struct);
         silly_struct->thread_id = taskid;
         silly_struct->fastq1 = malloc(sizeof(char) * (strlen(tmpdir) + strlen("/read1") + 1));
         silly_struct->fastq2 = malloc(sizeof(char) * (strlen(tmpdir) + strlen("/read2") + 1));
+        assert(silly_struct->fastq1);
+        assert(silly_struct->fastq2);
         sprintf(silly_struct->fastq1, "%s/read1", tmpdir);
         sprintf(silly_struct->fastq2, "%s/read2", tmpdir);
 
@@ -513,9 +546,11 @@ int main(int argc, char *argv[]) {
         //Start slurping in the fastq reads and converting them so they can be aligned
 #ifndef DEBUG
         threads = calloc(1, sizeof(pthread_t));
+        assert(threads);
         pthread_create(&(threads[0]), NULL, &slurp_fastq, (void *) silly_struct);
 #else
         threads = calloc(2, sizeof(pthread_t));
+        assert(threads);
         pthread_create(&(threads[1]), NULL, &send_store_fastq, (void *) &upto);
         pthread_create(&(threads[0]), NULL, &slurp_fastq, (void *) silly_struct);
 #endif

@@ -101,6 +101,7 @@ char * read_line(struct local_buffer *fp, char *cur_buf, int *size, int ignore) 
                 }
                 while(cur_buf[strlen(cur_buf)-1] != '\n') {
                     cur_buf = realloc(cur_buf, sizeof(char) * (*size + BT2BUF_SZ));
+                    assert(cur_buf);
                     *size += BT2BUF_SZ;
                     if(fgets(fp->buf, BT2BUF_SZ, fp->x.fptxt) == NULL) fp->finished = 1;
                     if(fp->finished == 1) break; //Broken input
@@ -135,6 +136,7 @@ char * read_line(struct local_buffer *fp, char *cur_buf, int *size, int ignore) 
                 }
                 while(cur_buf[strlen(cur_buf)-1] != '\n') {
                     cur_buf = realloc(cur_buf, sizeof(char) * (*size + BT2BUF_SZ));
+                    assert(cur_buf);
                     *size += BT2BUF_SZ;
                     if(gzgets(fp->x.fpgz, fp->buf, BT2BUF_SZ) == NULL) fp->finished = 1;
                     if(fp->finished == 1) break; //Broken input
@@ -221,6 +223,7 @@ int read_fastq(struct local_buffer *fp, fastq *read, int which) {
 *******************************************************************************/
 void * send_store_fastq(void *a) {
     char *line = malloc(MAXREAD*sizeof(char));
+    assert(line);
     struct local_buffer *f1 = NULL, *f2 = NULL;
     int i=0, nnodes = effective_nodes(), status;
     int nnode_groups = nnodes/((config.directional) ? 2 : 4);
@@ -232,19 +235,25 @@ void * send_store_fastq(void *a) {
     char *p, *fname1 = NULL, *fname2 = NULL, *save_ptr1=NULL, *save_ptr2=NULL;
     char *finished_signal = NULL;
     fastq *read = malloc(sizeof(fastq));
+    assert(read);
     MPI_Fastq *packed = NULL;
     int rv1 = 0, rv2 = 0, wordexp_offset=0;
     wordexp_t fnames1_wordexp, fnames2_wordexp;
     void *A = malloc(1);
+    assert(A);
 #ifdef DEBUG
     int taskid = global_debug_taskid;
 #endif
     f1 = calloc(1, sizeof(struct local_buffer));
+    assert(f1);
     f1->buf = malloc(BT2BUF_SZ*sizeof(char));
+    assert(f1->buf);
     f1->buf[0] = '\0'; //Just so that we know that we're at the start of a buffer
     if(config.paired) {
         f2 = calloc(1, sizeof(struct local_buffer));
+        assert(f2);
         f2->buf = malloc(BT2BUF_SZ*sizeof(char));
+        assert(f2->buf);
         f2->buf[0] = '\0'; //Just so that we know that we're at the start of a buffer
     }
 
@@ -256,11 +265,17 @@ void * send_store_fastq(void *a) {
     read->max_seq2 = 10;
     read->max_qual2 = 10;
     read->name1 = malloc(sizeof(char)*10);
+    assert(read->name1);
     read->seq1 = malloc(sizeof(char)*10);
+    assert(read->seq1);
     read->qual1 = malloc(sizeof(char)*10);
+    assert(read->qual1);
     read->name2 = malloc(sizeof(char)*10);
+    assert(read->name2);
     read->seq2 = malloc(sizeof(char)*10);
+    assert(read->seq2);
     read->qual2 = malloc(sizeof(char)*10);
+    assert(read->qual2);
 
     //These will be used later
     if(config.directional) {
@@ -309,6 +324,7 @@ void * send_store_fastq(void *a) {
         } else if(strcmp(p, ".bz") == 0 || strcmp(p, ".bz2") == 0) {
             f1->type = 2;
             cmd = realloc(cmd, sizeof(char) * (strlen(fnames1_wordexp.we_wordv[wordexp_offset]) + strlen("bzcat  ")));
+            assert(cmd);
             sprintf(cmd, "bzcat %s", fnames1_wordexp.we_wordv[wordexp_offset]);
             f1->x.fptxt = popen(cmd, "r");
         } else {
@@ -326,6 +342,7 @@ void * send_store_fastq(void *a) {
             } else if(strcmp(p, ".bz") == 0 || strcmp(p, ".bz2") == 0) {
                 f2->type = 2;
                 cmd = realloc(cmd, sizeof(char) * (strlen(fnames2_wordexp.we_wordv[wordexp_offset]) + strlen("bzcat  ")));
+                assert(cmd);
                 sprintf(cmd, "bzcat %s", fnames2_wordexp.we_wordv[wordexp_offset]);
                 f2->x.fptxt = popen(cmd, "r");
             } else {
@@ -408,6 +425,7 @@ void * send_store_fastq(void *a) {
         //Notify the master_processor_threads that they need to update the methylation metrics
         for(j=0; j<nnode_groups; j++) { //This is actually excessive, but we otherwise need to
             finished_signal = malloc(2*sizeof(char)); //We need to malloc() this or it won't be properly free()d after being added to the linked-list.
+            assert(finished_signal);
             sprintf(finished_signal, "\2");
             add_element(last_fastq_sentinel_node[j], (void *) finished_signal);
         }

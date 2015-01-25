@@ -109,6 +109,7 @@ alignmentBuffer *pushAlignmentBuffer(alignmentBuffer *buf, bam1_t *b) {
         buf->m++;
         kroundup32(buf->m);
         buf->buf = realloc(buf->buf, sizeof(bam1_t*)*buf->m);
+        assert(buf->buf);
     }
     buf->buf[buf->l++] = b;
     buf->curMem += mem;

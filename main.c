@@ -120,6 +120,7 @@ int main(int argc, char *argv[]) {
     config.directional = 0; //Default is non-directional
     config.nthreads = 12; //Default is 12 threads/node
     config.bowtie2_options = calloc(MAXREAD, sizeof(char));
+    assert(config.bowtie2_options);
     config.unmapped = 0; //By default, unmapped reads are NOT written to a fastq file
     config.scoremin_type = 'L'; //--score-min 'L,-0.6,-0.6'
     config.scoremin_intercept = -0.6;
@@ -179,6 +180,7 @@ int main(int argc, char *argv[]) {
             config.genome_dir = strdup(argv[i]);
             if(*(config.genome_dir+strlen(config.genome_dir)-1) != '/') {
                 config.genome_dir = realloc(config.genome_dir, sizeof(char) * (strlen(config.genome_dir)+2));
+                assert(config.genome_dir);
                 sprintf(config.genome_dir, "%s/", config.genome_dir);
             }
         } else if(strcmp(argv[i], "-p") == 0) {
@@ -215,6 +217,17 @@ int main(int argc, char *argv[]) {
             config.scoremin_type = strtok(argv[i], ",")[0];
             config.scoremin_intercept = (float) atof(strtok(NULL, ","));
             config.scoremin_coef = (float) atof(strtok(NULL, ","));
+        } else if(strncmp(argv[i], "--rg", 4) == 0) {
+            if(strlen(config.bowtie2_options) + strlen(argv[i]) + strlen(argv[i+1]) + 5 >= bowtie2_options_max) {
+                bowtie2_options_max = strlen(config.bowtie2_options) + strlen(argv[i]) + strlen(argv[i+1]) + 105;
+                config.bowtie2_options = realloc(config.bowtie2_options, sizeof(char)*bowtie2_options_max);
+                assert(config.bowtie2_options);
+            }
+            strcat(config.bowtie2_options, " ");
+            strcat(config.bowtie2_options, argv[i]);
+            strcat(config.bowtie2_options, " \"");
+            strcat(config.bowtie2_options, argv[++i]);
+            strcat(config.bowtie2_options, "\"");
         } else {
             if(strcmp(argv[i], "--local") == 0 || strcmp(argv[i], "--very-fast-local") == 0 || strcmp(argv[i], "--fast-local") == 0 || strcmp(argv[i], "--sensitive-local") == 0 || strcmp(argv[i], "--very-sensitive-local") == 0) {
                 config.mode = 1;
@@ -230,6 +243,7 @@ int main(int argc, char *argv[]) {
             if(strlen(config.bowtie2_options) + 1 + strlen(argv[i]) >= bowtie2_options_max) {
                 bowtie2_options_max = strlen(config.bowtie2_options) + 1 + strlen(argv[i]) + 100;
                 config.bowtie2_options = realloc(config.bowtie2_options, sizeof(char) * bowtie2_options_max);
+                assert(config.bowtie2_options);
             }
             strcat(config.bowtie2_options, " ");
             strcat(config.bowtie2_options, argv[i]);
@@ -253,6 +267,7 @@ int main(int argc, char *argv[]) {
         if(!config.quiet) fprintf(stderr, "Allocating space for %llu characters\n", chromosomes.max_genome);
         fflush(stderr);
         chromosomes.genome = malloc(sizeof(char)*chromosomes.max_genome);
+        assert(chromosomes.genome);
         *chromosomes.genome = '\0';
         if(chromosomes.genome == NULL) {
             fprintf(stderr, "Could not allocate enough room to hold the genome!\n");
@@ -266,6 +281,7 @@ int main(int argc, char *argv[]) {
     if(strlen(config.bowtie2_options) + 1000 >= bowtie2_options_max) {
         bowtie2_options_max = strlen(config.bowtie2_options) + 1000; //This should suffice
         config.bowtie2_options = realloc(config.bowtie2_options, sizeof(char) * bowtie2_options_max);
+        assert(config.bowtie2_options);
     }
     sprintf(config.bowtie2_options, "%s -p %i --score-min '%c,%g,%g'", config.bowtie2_options, config.nthreads, config.scoremin_type, config.scoremin_intercept, config.scoremin_coef);
 
@@ -305,6 +321,7 @@ int main(int argc, char *argv[]) {
         //MASTER specific procedures
         config.basename = get_basename(config.FASTQ1);
         config.outname = malloc(sizeof(char)*(strlen(config.odir)+ strlen(config.basename)+6));
+        assert(config.outname);
         if(config.isCRAM) sprintf(config.outname, "%s%s.cram", config.odir, config.basename);
         else sprintf(config.outname, "%s%s.bam", config.odir, config.basename);
 #ifdef DEBUG
@@ -338,6 +355,7 @@ int main(int argc, char *argv[]) {
 #endif
         //Open the input reads
         cmd = malloc(sizeof(char) * (strlen(config.FASTQ1) + 7));
+        assert(cmd);
         p = strrchr(config.FASTQ1, '.');
         if(strcmp(p,".gz") == 0 || strcmp(p,".GZ") == 0) {
             sprintf(cmd, "zcat %s", config.FASTQ1);
@@ -349,6 +367,7 @@ int main(int argc, char *argv[]) {
         zip1 = popen(cmd, "r");
         if(config.paired) {
             cmd = realloc(cmd, sizeof(char) * (strlen(config.FASTQ2) + 7));
+            assert(cmd);
             p = strrchr(config.FASTQ2, '.');
             if(strcmp(p,".gz") == 0 || strcmp(p,".GZ") == 0) {
                 sprintf(cmd, "zcat %s", config.FASTQ2);
@@ -363,11 +382,13 @@ int main(int argc, char *argv[]) {
         //Open the output file handles
         if(config.unmapped) {
             cmd = realloc(cmd, sizeof(char) * (strlen(config.unmapped1) + 8));
+            assert(cmd);
             if(!config.quiet) fprintf(stderr, "Writing unmapped reads to %s\n", config.unmapped1);
             sprintf(cmd, "gzip > %s", config.unmapped1);
             unmapped1 = popen(cmd, "w");
             if(config.paired) {
                 cmd = realloc(cmd, sizeof(char) * (strlen(config.unmapped2) + 8));
+                assert(cmd);
                 if(!config.quiet) fprintf(stderr, "Writing unmapped reads to %s\n", config.unmapped2);
                 sprintf(cmd, "gzip > %s", config.unmapped2);
                 unmapped2 = popen(cmd, "w");
@@ -403,6 +424,7 @@ int main(int argc, char *argv[]) {
 
         //Start the master node processer threads
         threads = calloc(1, sizeof(pthread_t));
+        assert(threads);
         pthread_create(&(threads[0]), NULL, &master_processer_thread, NULL);
         slurp(NULL);
         pthread_join(threads[0], NULL);

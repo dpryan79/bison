@@ -86,6 +86,7 @@ void *herd_slurp(void *a) {
         quit(3, -2);
     }
     p = malloc((size_t) size);
+    assert(p);
     if(MPI_Recv(p, size, MPI_BYTE, 1, 2, MPI_COMM_WORLD, &status) != MPI_SUCCESS) {
         fprintf(stderr, "Received an error when trying to receive header.\n");
         fflush(stderr);
@@ -106,10 +107,12 @@ void *herd_slurp(void *a) {
 
         if(size > 1) {
             p = malloc((size_t) size);
+            assert(p);
             MPI_Recv(p, size, MPI_BYTE, source, 5, MPI_COMM_WORLD, &status);
             add_element(target_node, p);
         } else {
             p = malloc((size_t) size);
+            assert(p);
             MPI_Recv(p, size, MPI_BYTE, source, 5, MPI_COMM_WORLD, &status);
             free(p);
             add_finished(target_node);
@@ -129,6 +132,8 @@ void *herd_slurp(void *a) {
     bam_hdr_t *tmp;
     MPI_read *packed = calloc(1, sizeof(MPI_read));
     struct packed_struct *target_node = NULL;
+    assert(iname);
+    assert(packed);
 
     //Open the input files and get the header
     sprintf(iname, "%s%s_1.bam", config.odir, config.basename);

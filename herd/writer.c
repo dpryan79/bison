@@ -39,17 +39,21 @@ void herd_setup(char *fname1, char *fname2) {
     if(config.basename) free(config.basename);
     config.basename = get_basename(fname1);
     config.outname = realloc(config.outname, sizeof(char)*(strlen(config.odir)+ strlen(config.basename)+6));
+    assert(config.outname);
+
     if(config.isCRAM) sprintf(config.outname, "%s%s.cram", config.odir, config.basename);
     else sprintf(config.outname, "%s%s.bam", config.odir, config.basename);
     //Open the output file handles
     if(config.unmapped) {
         create_fastq_names(fname1, fname2);
         cmd = malloc(sizeof(char) * (strlen(config.unmapped1) + 8));
+        assert(cmd);
         if(!config.quiet) fprintf(stderr, "Unmapped reads will be written to %s\n", config.unmapped1);
         sprintf(cmd, "gzip > %s", config.unmapped1);
         unmapped1 = popen(cmd, "w");
         if(config.paired) {
             cmd = realloc(cmd, sizeof(char) * (strlen(config.unmapped2) + 8));
+            assert(cmd);
             if(!config.quiet) fprintf(stderr, "Unmapped reads will be written to %s\n", config.unmapped2);
             sprintf(cmd, "gzip > %s", config.unmapped2);
             unmapped2 = popen(cmd, "w");
@@ -96,6 +100,7 @@ void * bam_writer(void *a) {
     time_t now;
     char ctime_buffer[26];
     alignmentBuffer *abuf = NULL;
+    assert(times);
 
     //If we write output in the exact same order as the input, we need to know
     //how many times to write from each master_processor_thread before going to the next
@@ -113,6 +118,7 @@ void * bam_writer(void *a) {
 
     if(config.sort) {
         abuf = calloc(1, sizeof(alignmentBuffer));
+        assert(abuf);
         abuf->maxMem = config.maxMem;
         abuf->opref = strdup(config.basename);
     }

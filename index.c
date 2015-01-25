@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <dirent.h>
 #include <pthread.h>
+#include <assert.h>
 
 #define MAXLINE 1024
 
@@ -40,6 +41,7 @@ void * bt2_build(void *a) {
 
     //Create the command
     cmd = malloc(sizeof(char) * (strlen(options->options) + 2*strlen(options->odir) + 200));
+    assert(cmd);
     if(options->conversion == 'C') {
         sprintf(cmd, "bowtie2-build %s %s/genome.fa %s/BS_CT", options->options, options->odir, options->odir);
     } else {
@@ -104,12 +106,14 @@ int main(int argc, char *argv[]) {
 
     //Store bowtie2-build options
     options = (char *) calloc(1, sizeof(char));
+    assert(options);
     for(i=1; i<argc-1; i++) {
         if(strcmp(argv[i], "-c") == 0) {
             fprintf(stderr, "The -c option isn't supported!\n");
             return 1;
         }
         options = realloc(options, sizeof(char) * (strlen(options) + strlen(argv[i]) + 2));
+        assert(options);
         sprintf(options, "%s %s", options, argv[i]);
     }
 
@@ -119,6 +123,7 @@ int main(int argc, char *argv[]) {
             basedir = strdup(argv[argc-1]);
             if(*(basedir+strlen(basedir)-1) != '/') { //Ensure we end in a '/'
                 basedir = realloc(basedir, sizeof(char) * (2+strlen(basedir)));
+                assert(basedir);
                 sprintf(basedir, "%s/", basedir);
             }
             odir = strdup(basedir);
@@ -135,13 +140,16 @@ int main(int argc, char *argv[]) {
 
     //Make the output directories
     odir = realloc(odir, sizeof(char) * (strlen(odir) + 1 + strlen("bisulfite_genome")));
+    assert(odir);
     odir = strcat(odir, "bisulfite_genome");
     mkdir(odir, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     fprintf(stderr, "Output will be placed under %s\n", odir);
     CT_dir = malloc(sizeof(char) * (strlen(odir) + strlen("/CT_conversion/genome.fa") +1));
+    assert(CT_dir);
     sprintf(CT_dir, "%s/CT_conversion", odir);
     mkdir(CT_dir, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     GA_dir = malloc(sizeof(char) * (strlen(odir) + strlen("/CT_conversion/genome.fa") +1));
+    assert(GA_dir);
     sprintf(GA_dir, "%s/GA_conversion", odir);
     mkdir(GA_dir, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 
@@ -154,6 +162,7 @@ int main(int argc, char *argv[]) {
     nfiles = scandir(basedir, &files, filter, alphasort);
     for(i=0; i<nfiles; i++) {
         fullpath = realloc(fullpath, sizeof(char)*(strlen(basedir)+strlen(files[i]->d_name)+1));
+        assert(fullpath);
         sprintf(fullpath, "%s%s",basedir,files[i]->d_name);
         convert(fullpath, CT, GA);
     }

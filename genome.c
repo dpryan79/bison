@@ -15,6 +15,7 @@
 *******************************************************************************/
 void get_seq(char *seq, FILE *fp) {
     char *line = malloc(MAXREAD*sizeof(char));
+    assert(line);
     assert(fgets(line, MAXREAD, fp) != NULL);
     assert(fgets(line, MAXREAD, fp) != NULL);
     *(line+strlen(line)-1) = '\0'; //remove the \n
@@ -59,6 +60,7 @@ unsigned long long genome_chrom_length(char *chrom) {
 char * get_genomic_context(unsigned long long offset, unsigned long long position, int change, unsigned long long chrom_length) {
     int i;
     char *output = calloc(4, sizeof(char));
+    assert(output);
 
     if(change > 0) {
         for(i=0; i<3; i++) {

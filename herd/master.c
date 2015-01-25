@@ -15,11 +15,17 @@ void * herd_master_processer_thread(void *a) {
     int node_base, node_final;
     int tmp_j = 0;
     char **seq = malloc(sizeof(char *) * 2);
+    assert(seq);
     bam1_t **node1_read = malloc(sizeof(bam1_t*) * 2);
     bam1_t **node2_read = malloc(sizeof(bam1_t*) * 2);
     bam1_t **node3_read = malloc(sizeof(bam1_t*) * 2);
     bam1_t **node4_read = malloc(sizeof(bam1_t*) * 2);
     fastq *read = malloc(sizeof(fastq));
+    assert(node1_read);
+    assert(node2_read);
+    assert(node3_read);
+    assert(node4_read);
+    assert(read);
     time_t now;
     char ctime_buffer[26];
     unsigned long long local_m_reads_OT = 0, local_m_reads_OB = 0;

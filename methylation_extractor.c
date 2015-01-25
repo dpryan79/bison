@@ -53,6 +53,8 @@ struct list_struct *CpGlist, *CHGlist, *CHHlist;
 struct list_struct* init_list() {
     struct list_struct *output = calloc(1, sizeof(struct list_struct));
     struct list_struct *next = calloc(1, sizeof(struct list_struct));
+    assert(output);
+    assert(next);
     output->next = next;
     output->tid = -1;
     output->pos = -1;
@@ -80,6 +82,7 @@ void destroy_methyl_list(struct list_struct *list) {
 struct list_struct* insert_call(struct list_struct *current, Site *site) {
     struct list_struct *next = current->next;
     struct list_struct *new = malloc(sizeof(struct list_struct));
+    assert(new);
 
     new->next = next;
     new->tid = site->tid;
@@ -102,9 +105,13 @@ struct list_struct* insert_call(struct list_struct *current, Site *site) {
 *******************************************************************************/
 Sites* init_sites() {
     Sites *output = malloc(sizeof(Sites));
+    assert(output);
     output->CpG = malloc(sizeof(Site)*1000000);
     output->CHG = malloc(sizeof(Site)*1000000);
     output->CHH = malloc(sizeof(Site)*1000000);
+    assert(output->CpG);
+    assert(output->CHG);
+    assert(output->CHH);
     output->num_CpG = 0;
     output->max_CpG = 1000000;
     output->num_CHG = 0;
@@ -292,18 +299,21 @@ int extractor_process_single(bam1_t *read, Sites *sites) {
     if(storeCpG) {
         if(sites->num_CpG + 100000 > sites->max_CpG) {
             sites->CpG = realloc(sites->CpG, (sites->max_CpG+100000)*sizeof(Site));
+            assert(sites->CpG);
             sites->max_CpG += 100000;
         }
     }
     if(storeCHG) {
         if(sites->num_CHG + 100000 > sites->max_CHG) {
             sites->CHG = realloc(sites->CHG, (sites->max_CHG+100000)*sizeof(Site));
+            assert(sites->CHG);
             sites->max_CHG += 100000;
         }
     }
     if(storeCHH) {
         if(sites->num_CHH + 100000 > sites->max_CHH) {
             sites->CHH = realloc(sites->CHH, (sites->max_CHH+100000)*sizeof(Site));
+            assert(sites->CHH);
             sites->max_CHH += 100000;
         }
     }
@@ -402,14 +412,17 @@ int extractor_process_overlapping(bam1_t *read1, bam1_t *read2, Sites *sites) {
     ***************************************************************************/
     if(sites->num_CpG + 100000 > sites->max_CpG) {
         sites->CpG = realloc(sites->CpG, (sites->max_CpG+100000)*sizeof(Site));
+        assert(sites->CpG);
         sites->max_CpG += 100000;
     }
     if(sites->num_CHG + 100000 > sites->max_CHG) {
         sites->CHG = realloc(sites->CHG, (sites->max_CHG+100000)*sizeof(Site));
+        assert(sites->CHG);
         sites->max_CHG += 100000;
     }
     if(sites->num_CHH + 100000 > sites->max_CHH) {
         sites->CHH = realloc(sites->CHH, (sites->max_CHH+100000)*sizeof(Site));
+        assert(sites->CHH);
         sites->max_CHH += 100000;
     }
 
@@ -748,6 +761,7 @@ void generate_output_names(char *ifile, struct of_struct *of) {
     p = strrchr(tmp, '.');
     if(strcmp(p, ".sam") == 0 || strcmp(p, ".bam") == 0 || strcmp(p, ".cram") == 0) *p = '\0';
     oname = malloc(sizeof(char) * (strlen(tmp) + strlen("_CpG.bedGraph ")));
+    assert(oname);
 
     if(storeCpG) {
         sprintf(oname, "%s_CpG.bedGraph", tmp);

@@ -11,6 +11,7 @@ void * first_writer_func(void *a) {
     FILE *f1 = fopen(fastq1, "w");
     fastq *read = malloc(sizeof(fastq));
     int strand;
+    assert(read);
 
     //Determine the conversions to make
     if(config.directional) {
@@ -32,6 +33,12 @@ void * first_writer_func(void *a) {
     read->name2 = malloc(sizeof(char) * 10);
     read->seq2 = malloc(sizeof(char) * 10);
     read->qual2 = malloc(sizeof(char) * 10);
+    assert(read->name1);
+    assert(read->seq1);
+    assert(read->qual1);
+    assert(read->name2);
+    assert(read->seq2);
+    assert(read->qual2);
 
     while(1) {
         while(!is_ready(first_writer, 0)); //Sleeping slows things down too much
@@ -75,6 +82,7 @@ void * second_writer_func(void *a) {
     FILE *f2 = fopen(fastq2, "w");
     fastq *read = malloc(sizeof(fastq));
     int strand;
+    assert(read);
 
     //Determine the conversions to make
     if(config.directional) {
@@ -96,6 +104,12 @@ void * second_writer_func(void *a) {
     read->name2 = malloc(sizeof(char) * 10);
     read->seq2 = malloc(sizeof(char) * 10);
     read->qual2 = malloc(sizeof(char) * 10);
+    assert(read->name1);
+    assert(read->seq1);
+    assert(read->qual1);
+    assert(read->name2);
+    assert(read->seq2);
+    assert(read->qual2);
 
     while(1) {
         while(!is_ready(second_writer, 0)); //Sleeping slows things down too much
@@ -149,16 +163,13 @@ void * slurp_fastq(void *a) {
     int size = 0, current_p_size = 0;
     MPI_Status status;
     fastq *read = malloc(sizeof(fastq));
+    assert(read);
 
-//    first_writer = malloc(sizeof(struct packed_struct));
-//    first_writer_sentinel = malloc(sizeof(struct packed_struct));
     first_writer = initialize_list(first_writer);
     first_writer_sentinel = first_writer->next;
     pthread_create(&(threads[0]), NULL, &first_writer_func, a);
     if(config.paired) {
         //If we have pairs, then writing simultaneuosly to two fifos (that will be read sequentially by bowtie2) won't work, since bowtie2 will read from a single fifo multiple times!!!
-//        second_writer = malloc(sizeof(struct packed_struct));
-//        second_writer_sentinel = malloc(sizeof(struct packed_struct));
         second_writer = initialize_list(second_writer);
         second_writer_sentinel = second_writer->next;
         pthread_create(&(threads[1]), NULL, &second_writer_func, a);
@@ -177,6 +188,12 @@ void * slurp_fastq(void *a) {
     read->name2 = malloc(sizeof(char) * 10);
     read->seq2 = malloc(sizeof(char) * 10);
     read->qual2 = malloc(sizeof(char) * 10);
+    assert(read->name1);
+    assert(read->seq1);
+    assert(read->qual1);
+    assert(read->name2);
+    assert(read->seq2);
+    assert(read->qual2);
 
     //Receive and process the raw reads
     while(1) {
@@ -184,6 +201,7 @@ void * slurp_fastq(void *a) {
         MPI_Get_count(&status, MPI_BYTE, &size);
         if(size > current_p_size) {
             p = realloc(p, (size_t) size);
+            assert(p);
         }
         MPI_Recv(p, size, MPI_BYTE, 0, 3, MPI_COMM_WORLD, &status);
         //Are we finished receiving?
@@ -192,10 +210,12 @@ void * slurp_fastq(void *a) {
         //Copy if needed
         if(config.paired) {
             p2 = malloc(size);
+            assert(p2);
             memcpy(p2,p,size);
             add_element(second_writer_sentinel, p2);
         }
         p3 = malloc(size);
+        assert(p3);
         memcpy(p3,p,size);
         add_element(first_writer_sentinel, p3);
     }
@@ -253,6 +273,8 @@ void herd_worker_node(int thread_id, char *fastq1, char *fastq2) {
 #endif
     time_t t0, t1;
     int swapped = 0;
+    assert(last_qname);
+    assert(packed_read);
 
     //Which strand should we be aligning to?
     if(config.directional) {
@@ -274,6 +296,7 @@ void herd_worker_node(int thread_id, char *fastq1, char *fastq2) {
 
 #ifdef DEBUG
     oname = malloc(sizeof(char) *(1+strlen(config.odir)+strlen(config.basename)+strlen("_X.bam")));
+    assert(oname);
     sprintf(oname, "%s%s_%i.bam", config.odir, config.basename, thread_id);
     if(!config.quiet) fprintf(stderr, "Writing output to %s\n", oname);
     of = sam_open(oname, "wb");
@@ -281,6 +304,7 @@ void herd_worker_node(int thread_id, char *fastq1, char *fastq2) {
 #endif
 
     cmd = (char *) malloc(sizeof(char) * cmd_length);
+    assert(cmd);
     if(strand == 0) { //OT Read#1 C->T, Read#2 G->A, Genome C->T only the + strand
         if(config.paired) {
             sprintf(cmd, "bowtie2 -q --reorder %s --norc -x %sbisulfite_genome/CT_conversion/BS_CT -1 %s -2 %s", config.bowtie2_options, config.genome_dir, fastq1, fastq2);
@@ -332,6 +356,7 @@ void herd_worker_node(int thread_id, char *fastq1, char *fastq2) {
 #else
     packed_header = pack_header(header);
     void *tmp_pointer = malloc(packed_header->size);
+    assert(tmp_pointer);
     MPI_Request request;
     MPI_Isend((void *) packed_header->packed, packed_header->size, MPI_BYTE, 0, 2, MPI_COMM_WORLD, &request);
     status = MPI_Recv(tmp_pointer, packed_header->size, MPI_BYTE, 0, 2, MPI_COMM_WORLD, &stat);
@@ -360,6 +385,7 @@ void herd_worker_node(int thread_id, char *fastq1, char *fastq2) {
             if(read1->core.l_qname > max_qname) {
                 max_qname = read1->core.l_qname + 10;
                 last_qname = realloc(last_qname, sizeof(char) * max_qname);
+                assert(last_qname);
             }
             strcpy(last_qname, bam_get_qname(read1));
         }
@@ -375,7 +401,10 @@ void herd_worker_node(int thread_id, char *fastq1, char *fastq2) {
                 MPI_Send((void *) packed_read->packed, packed_read->size, MPI_BYTE, 0, 5, MPI_COMM_WORLD);
 #else
                 sam_write1(of, global_header, read2);
-                if(packed_read->size > current_p_size) p = realloc(p, packed_read->size);
+                if(packed_read->size > current_p_size) {
+                    p = realloc(p, packed_read->size);
+                    assert(p);
+                }
                 MPI_Isend((void *) packed_read->packed, packed_read->size, MPI_BYTE, 0, 5, MPI_COMM_WORLD, &request);
                 status = MPI_Recv(p, packed_read->size, MPI_BYTE, 0, 5, MPI_COMM_WORLD, &stat);
                 MPI_Wait(&request, &stat);
@@ -389,7 +418,10 @@ void herd_worker_node(int thread_id, char *fastq1, char *fastq2) {
 #ifndef DEBUG
         MPI_Send((void *) packed_read->packed, packed_read->size, MPI_BYTE, 0, 5, MPI_COMM_WORLD);
 #else
-        if(packed_read->size > current_p_size) p = realloc(p, packed_read->size);
+        if(packed_read->size > current_p_size) {
+            p = realloc(p, packed_read->size);
+            assert(p);
+        }
         MPI_Isend(packed_read->packed, packed_read->size, MPI_BYTE, 0, 5, MPI_COMM_WORLD, &request);
         status = MPI_Recv(p, packed_header->size, MPI_BYTE, 0, 5, MPI_COMM_WORLD, &stat);
         MPI_Wait(&request, &stat);
@@ -402,7 +434,10 @@ void herd_worker_node(int thread_id, char *fastq1, char *fastq2) {
             MPI_Send((void *) packed_read->packed, packed_read->size, MPI_BYTE, 0, 5, MPI_COMM_WORLD);
 #else
             sam_write1(of, global_header, read2);
-            if(packed_read->size > current_p_size) p = realloc(p, packed_read->size);
+            if(packed_read->size > current_p_size) {
+                p = realloc(p, packed_read->size);
+                assert(p);
+            }
             MPI_Isend((void *) packed_read->packed, packed_read->size, MPI_BYTE, 0, 5, MPI_COMM_WORLD, &request);
             status = MPI_Recv(p, packed_header->size, MPI_BYTE, 0, 5, MPI_COMM_WORLD, &stat);
             MPI_Wait(&request, &stat);
@@ -420,6 +455,7 @@ void herd_worker_node(int thread_id, char *fastq1, char *fastq2) {
     packed_read->size = 0;
 #ifndef DEBUG
     void *A = malloc(1);
+    assert(A);
     MPI_Send(A, 1, MPI_BYTE, 0, 5, MPI_COMM_WORLD);
     free(A);
 #endif

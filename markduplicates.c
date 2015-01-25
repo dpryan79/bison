@@ -492,6 +492,7 @@ int main(int argc, char *argv[]) {
     bitmap_length = max_length/32;
     bitmap_length += (max_length % 32 > 0) ? 1 : 0;
     bitmap = calloc(bitmap_length, sizeof(uint32_t));
+    assert(bitmap);
 
     //Sort
     qsort((void *) alignments, (size_t) total_pairs, sizeof(alignment), &comp_func);

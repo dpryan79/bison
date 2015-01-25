@@ -21,6 +21,7 @@ bam_hdr_t *modifyHeader(bam_hdr_t *hdr, int argc, char *argv[]) {
     alen = strlen("@PG\tID:\t") + strlen(argv[0]) + strlen("\tVN:") + strlen(VERSION) + strlen("\tCL\"\"");
     for(i=0; i<argc; i++) alen += strlen(argv[i])+1;
     hdr->text = realloc(hdr->text, sizeof(char)*(clen+alen));
+    assert(hdr->text);
     hdr->l_text = alen+clen;
     PG = hdr->text+clen;
 
@@ -56,6 +57,7 @@ bam_hdr_t *modifyHeaderSorted(bam_hdr_t *hdr) {
     clen = hdr->l_text - i;
 
     text = malloc(clen+alen);
+    assert(text);
     hdr->l_text = alen+clen;
     snprintf(text, alen+clen, "@HD\tVN:1.3\tSO:coordinate\n%s", SQ);
     text[hdr->l_text-1] = '\n'; //Null termination? We don't need no stinkin null termination!
@@ -79,6 +81,7 @@ unsigned long long *calculate_positions(bam1_t *read) {
     int i, j, offset = 0, op, op_len;
     uint32_t *CIGAR = bam_get_cigar(read);
     unsigned int previous_position = (unsigned int) read->core.pos;
+    assert(positions);
 
     for(i=0; i<read->core.n_cigar; i++) {
         op = *(CIGAR+i) & 15;
@@ -132,11 +135,13 @@ void read_genome() {
     unsigned long long length = 0;
     int end, nchromosomes, i, j, nfiles;
     chromosome_struct *chromosome = NULL;
+    assert(line);
 
     nfiles = scandir(config.genome_dir, &files, filter, alphasort);
     for(j=0; j<nfiles; j++) {
         //This is a fasta file that we need to read into the genome array and append a chromosome_struct onto chromosomes_struct
         fullpath = realloc(fullpath, sizeof(char)*(strlen(config.genome_dir)+strlen(files[j]->d_name)+1));
+        assert(fullpath);
         sprintf(fullpath, "%s%s",config.genome_dir,files[j]->d_name);
         if(config.isCRAM && j==0) config.fai = strdup(fullpath);
         fp = fopen(fullpath, "r");
@@ -154,12 +159,15 @@ void read_genome() {
                 //Initialize a new chromosome_struct and lengthen the global chromosomes struct
                 nchromosomes = ++chromosomes.nchromosomes;
                 chromosomes.chromosome = realloc(chromosomes.chromosome, sizeof(chromosome_struct*) * nchromosomes);
+                assert(chromosomes.chromosome);
                 chromosomes.chromosome[nchromosomes-1] = malloc(sizeof(chromosome_struct));
+                assert(chromosomes.chromosome[nchromosomes-1]);
                 chromosome = chromosomes.chromosome[nchromosomes-1];
                 chromosome->offset = offset;
                 p = strchr(line, ' ');
                 if(p != NULL) *p = '\0'; //If there's anything after the name, ignore it
                 chromosome->chrom = malloc(sizeof(char)*strlen(line));
+                assert(chromosome->chrom);
                 strcpy(chromosome->chrom, (line+1)); //ignore the ">"
                 length = 0;
                 chromosome->offset = offset;
@@ -168,6 +176,7 @@ void read_genome() {
                 if(offset + 10000 >= chromosomes.max_genome) {
                     chromosomes.max_genome += 1000000;
                     chromosomes.genome = realloc(chromosomes.genome, sizeof(char) * chromosomes.max_genome);
+                    assert(chromosomes.genome);
                     g = chromosomes.genome + offset;
                  }
                  offset += end-1;

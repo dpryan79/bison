@@ -106,6 +106,7 @@ void print_metrics() {
     char *of = malloc(sizeof(char) * (strlen(config.odir)+5+strlen(config.basename)));
     FILE *fp;
     unsigned long long m_reads = m_reads_OT + m_reads_OB + m_reads_CTOT + m_reads_CTOB;
+    assert(of);
     sprintf(of, "%s%s.txt", config.odir, config.basename);
     fp = fopen(of, "w");
 
@@ -174,6 +175,7 @@ void print_metrics() {
 htsFile * sam_popen(char *cmd) {
     htsFile *fp = (htsFile*)calloc(1, sizeof(htsFile));
     int fid, fid2;
+    assert(fp);
     popen_fd = popen(cmd, "r"); //Global
 
     fid = fileno(popen_fd);

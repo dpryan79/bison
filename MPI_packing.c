@@ -19,6 +19,7 @@ MPI_Header * pack_header(bam_hdr_t *header) {
     int i;
     void *p;
     MPI_Header *output = malloc(sizeof(MPI_Header));
+    assert(output);
 
     //target_name
     for(i=0; i<header->n_targets; i++) {
@@ -37,6 +38,7 @@ MPI_Header * pack_header(bam_hdr_t *header) {
     //Start copying, layout is n_targets,target_name[s],target_len[s],l_text,text
     output->size = (int) size;
     output->packed = malloc(size);
+    assert(output->packed);
     p = output->packed;
 
     //n_targets
@@ -90,9 +92,11 @@ void unpack_header(bam_hdr_t *header, void *packed) {
 
     //**target_name
     header->target_name = (char **) malloc(sizeof(char *) * (header->n_targets));
+    assert(header->target_name);
     for(i=0; i<header->n_targets; i++) {
         strlength = strlen((char *) p)+1;
         header->target_name[i] = malloc(sizeof(char) * strlength);
+        assert(header->target_name[i]);
         memcpy((void *) (header->target_name[i]), p, sizeof(char)*strlength);
         pchar = (char *) p;
         p = (void *) (pchar+strlength);
@@ -100,6 +104,7 @@ void unpack_header(bam_hdr_t *header, void *packed) {
 
     //target_len
     header->target_len = malloc(sizeof(uint32_t) * (header->n_targets));
+    assert(header->target_len);
     for(i=0; i<header->n_targets; i++) {
         header->target_len[i] = *((uint32_t *) p);
         puint32_t = (uint32_t *) p;
@@ -113,6 +118,7 @@ void unpack_header(bam_hdr_t *header, void *packed) {
 
     //text
     header->text = (char *) malloc(sizeof(char) * (header->l_text+1));
+    assert(header->text);
     memcpy((void *) (header->text), p, sizeof(char) * (header->l_text + 1));
 }
 
@@ -133,9 +139,11 @@ MPI_read * pack_read(bam1_t *read, MPI_read *output) {
     needed_size = (int) (sizeof(bam1_t) + m_data);
     if(output->size == 0) {
         output->packed = malloc((size_t) needed_size);
+        assert(output->packed);
         output->size = needed_size;
     } else if(needed_size > output->size) {
         output->packed = realloc(output->packed, (size_t) needed_size);
+        assert(output->packed);
         output->size = needed_size;
     }
     memcpy((void *) output->packed, (void *) read, sizeof(bam1_t));
@@ -165,6 +173,7 @@ bam1_t *unpack_read(bam1_t *read, void *packed) {
     read->l_data= pbam1_t->l_data;
     read->m_data = pbam1_t->m_data;
     newdata = (uint8_t *) malloc(read->m_data);
+    assert(newdata);
     memcpy((void *) newdata, (void *) pdata, read->m_data);
     read->data = newdata;
 

@@ -96,12 +96,17 @@ int main(int argc, char *argv[]) {
         r1_um[i] = calloc(max_length, sizeof(unsigned long long));
         r2_m[i] = calloc(max_length, sizeof(unsigned long long));
         r2_um[i] = calloc(max_length, sizeof(unsigned long long));
+        assert(r1_m[i]);
+        assert(r1_um[i]);
+        assert(r2_m[i]);
+        assert(r2_um[i]);
     }
 
     //Create the output name
     p = strrchr(prefix, '.');
     *p = '\0';
     prefix = realloc(prefix, sizeof(char) * (strlen(prefix) + strlen("_mbias.txt ")));
+    assert(prefix);
     sprintf(prefix, "%s_mbias.txt", prefix);
     ofile = fopen(prefix, "w");
 
@@ -117,6 +122,10 @@ int main(int argc, char *argv[]) {
                 r1_um[i] = realloc(r1_um[i], read->core.l_qseq * sizeof(unsigned long long));
                 r2_m[i] = realloc(r2_m[i], read->core.l_qseq * sizeof(unsigned long long));
                 r2_um[i] = realloc(r2_um[i], read->core.l_qseq * sizeof(unsigned long long));
+                assert(r1_m[i]);
+                assert(r1_um[i]);
+                assert(r2_m[i]);
+                assert(r2_um[i]);
                 for(j=max_length; j<read->core.l_qseq; j++) {
                     *(r1_m[i]+j) = 0;
                     *(r1_um[i]+j) = 0;
@@ -207,6 +216,7 @@ int main(int argc, char *argv[]) {
 
     if(pdf) {
         char *cmd = malloc(sizeof(char) * (strlen("bison_mbias2pdf ") + strlen(prefix) + 1));
+        assert(cmd);
         sprintf(cmd, "bison_mbias2pdf %s", prefix);
         fprintf(stderr, "Executing %s\n", cmd);
         if(system(cmd) == -1) fprintf(stderr, "N.B. an error occured while running bison_mbias2pdf!\n");

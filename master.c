@@ -362,6 +362,8 @@ char *callXM(bam1_t *read, char *XG) {
     char genome_base, read_base, *bases;
     int i;
     uint8_t b;
+    assert(read_seq);
+    assert(XM);
 
     //Extract the read sequence
     for(i=0; i<read->core.l_qseq; i++) {
@@ -491,6 +493,8 @@ char *callXX(bam1_t *read, char *XM, char *XG) {
     char *read_seq = calloc(1+read->core.l_qseq, sizeof(char));
     char *XX = calloc(MAXREAD, sizeof(char));
     int i, good = 0;
+    assert(read_seq);
+    assert(XX);
 
     //Extract the read sequence
     for(i=0; i<read->core.l_qseq; i++) {
@@ -558,6 +562,8 @@ int32_t process_single(bam1_t *read1, bam1_t *read2, bam1_t *read3, bam1_t *read
     kstring_t *kXX = (kstring_t *) calloc(1, sizeof(kstring_t));
     //For recalculating the MAPQ ala bowtie2 v2 MAPQ calculator
     int XS, scMin, MAPQ = 0, AS=0, mapped = 0;
+    assert(kXM);
+    assert(kXX);
 
     //Set the bit map to make the master function a bit simpler
     if(!(read1->core.flag & BAM_FUNMAP)) mapped += 1;
@@ -852,6 +858,10 @@ int32_t process_paired(bam1_t **read1, bam1_t **read2, bam1_t **read3, bam1_t **
     int MAPQ, scMin1, scMin2;
     int XS1 = INT_MIN>>1, XS2 = INT_MIN>>1;
     int32_t best_node = 0;
+    assert(kXM1);
+    assert(kXM2);
+    assert(kXX1);
+    assert(kXX2);
 
     //Determine the best node(s)
     best_node = find_best_paired(read1, read2, read3, read4);
@@ -1120,8 +1130,11 @@ void * master_processer_thread(void *a) {
     int thread_id = 0, best_node, i;
     int times = (config.paired) ? 2 : 1;
     char **seq = malloc(sizeof(char *) * 2);
+    assert(seq);
     *(seq) = malloc(sizeof(char)*MAXREAD);
+    assert(*seq);
     *(seq+1) = malloc(sizeof(char)*MAXREAD);
+    assert(*(seq+1));
     bam1_t **node1_read = malloc(sizeof(bam1_t*) * 2);
     bam1_t **node2_read = malloc(sizeof(bam1_t*) * 2);
     bam1_t **node3_read = malloc(sizeof(bam1_t*) * 2);
@@ -1129,15 +1142,21 @@ void * master_processer_thread(void *a) {
     bam1_t *best_read1 = NULL, *best_read2 = NULL;
     time_t now;
     alignmentBuffer *abuf = NULL;
+    assert(node1_read);
+    assert(node2_read);
+    assert(node3_read);
+    assert(node4_read);
 
     if(config.sort) {
         abuf = calloc(1, sizeof(alignmentBuffer));
+        assert(abuf);
         abuf->maxMem = config.maxMem;
         abuf->opref = strdup(config.basename);
     }
 
     //Metrics
     metrics_struct *metrics = calloc(1,sizeof(metrics_struct));
+    assert(metrics);
 
     //Process read i/o
     while(1) {

@@ -11,6 +11,7 @@
 void add_element(struct packed_struct *last, void *packed) {
     struct packed_struct *new = malloc(sizeof(struct packed_struct));
     struct packed_struct *next_to_last = last->previous;
+    assert(new);
 
     //Setup the new element
     new->packed = packed;
@@ -103,6 +104,7 @@ inline int is_finished(struct packed_struct *first) {
 void add_finished(struct packed_struct *last) {
     struct packed_struct *new = malloc(sizeof(struct packed_struct));
     struct packed_struct *next_to_last = last->previous;
+    assert(new);
 
     new->packed = NULL;
     new->next = last;
@@ -129,7 +131,9 @@ void add_finished(struct packed_struct *last) {
 *******************************************************************************/
 struct packed_struct *initialize_list(struct packed_struct *first) {
     first = malloc(sizeof(struct packed_struct));
+    assert(first);
     struct packed_struct *last= malloc(sizeof(struct packed_struct));
+    assert(last);
 
     first->next = last;
     first->previous = first;
@@ -189,6 +193,7 @@ void *slurp(void *a) {
         quit(3, -2);
     }
     p = malloc((size_t) size);
+    assert(p);
     if(MPI_Recv(p, size, MPI_BYTE, 1, 2, MPI_COMM_WORLD, &status) != MPI_SUCCESS) {
         fprintf(stderr, "Received an error when trying to receive header.\n");
         fflush(stderr);
@@ -199,6 +204,7 @@ void *slurp(void *a) {
     free(p);
 #else
     char *iname = malloc(sizeof(char) * (1+strlen(config.odir)+strlen(config.basename)+strlen("_CTOT.bam")));
+    assert(iname);
     sprintf(iname, "%s%s_OT.bam", config.odir, config.basename);
     fp1 = sam_open(iname, "rb");
     sprintf(iname, "%s%s_OB.bam", config.odir, config.basename);
@@ -214,6 +220,7 @@ void *slurp(void *a) {
     if(!config.quiet) fprintf(stderr, "header written\n"); fflush(stderr);
     bam1_t *read = bam_init1();
     MPI_read *packed = calloc(1, sizeof(MPI_read));
+    assert(packed);
     packed->packed = NULL;
     packed->size = 0;
     bam_hdr_t *tmp;
@@ -244,10 +251,12 @@ void *slurp(void *a) {
 
         if(size > 1) {
             p = malloc((size_t) size);
+            assert(p);
             MPI_Recv(p, size, MPI_BYTE, source, 5, MPI_COMM_WORLD, &status);
             add_element(target_node, p);
         } else {
             p = malloc((size_t) size);
+            assert(p);
             MPI_Recv(p, size, MPI_BYTE, source, 5, MPI_COMM_WORLD, &status);
             free(p);
             add_finished(target_node);

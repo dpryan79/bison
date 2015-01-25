@@ -16,6 +16,7 @@ MPI_Fastq * pack_fastq(fastq *read) {
     void *p;
     char *pchar, null_char = '\0';
     MPI_Fastq *output = malloc(sizeof(MPI_Fastq));
+    assert(output);
 
     //Calculate the size needed for read1
     length1 = sizeof(char) * (strlen(read->name1) + strlen(read->seq1) + strlen(read->qual1) + 3);
@@ -26,6 +27,7 @@ MPI_Fastq * pack_fastq(fastq *read) {
     }
     output->size = size;
     output->packed = malloc(size);
+    assert(output->packed);
 
     //Set everything
     p = output->packed;
@@ -93,6 +95,7 @@ fastq * unpack_fastq(fastq *read, void *packed) {
     len = strlen((char *) p) + 1; //name
     if(len > read->max_name1) {
         read->name1 = realloc((void *) read->name1, sizeof(char) * len);
+        assert(read->name1);
         read->max_name1 = len;
     }
     strcpy(read->name1, (char *) p);
@@ -101,6 +104,7 @@ fastq * unpack_fastq(fastq *read, void *packed) {
     len = strlen((char *) p) + 1; //seq
     if(len > read->max_seq1) {
         read->seq1 = realloc((void *) read->seq1, sizeof(char) * len);
+        assert(read->seq1);
         read->max_seq1 = len;
     }
     strcpy(read->seq1, (char *) p);
@@ -109,6 +113,7 @@ fastq * unpack_fastq(fastq *read, void *packed) {
     len = strlen((char *) p) + 1; //qual
     if(len > read->max_qual1) {
         read->qual1 = realloc((void *) read->qual1, sizeof(char) * len);
+        assert(read->qual1);
         read->max_qual1 = len;
     }
     strcpy(read->qual1, (char *) p);
@@ -120,6 +125,7 @@ fastq * unpack_fastq(fastq *read, void *packed) {
         len = strlen((char *) p) + 1; //name
         if(len > read->max_name2) {
             read->name2 = realloc((void *) read->name2, sizeof(char) * len);
+            assert(read->name2);
             read->max_name2 = len;
         }
         strcpy(read->name2, (char *) p);
@@ -128,6 +134,7 @@ fastq * unpack_fastq(fastq *read, void *packed) {
         len = strlen((char *) p) + 1; //seq
         if(len > read->max_seq2) {
             read->seq2 = realloc((void *) read->seq2, sizeof(char) * len);
+            assert(read->seq2);
             read->max_seq2 = len;
         }
         strcpy(read->seq2, (char *) p);
@@ -136,6 +143,7 @@ fastq * unpack_fastq(fastq *read, void *packed) {
         len = strlen((char *) p) + 1; //qual
         if(len > read->max_qual2) {
             read->qual2 = realloc((void *) read->qual2, sizeof(char) * len);
+            assert(read->qual2);
             read->max_qual2 = len;
         }
         strcpy(read->qual2, (char *) p);

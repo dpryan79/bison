@@ -11,8 +11,10 @@
 void worker_node(int thread_id) {
     int cmd_length = 1, max_qname = 0, status;
     char *cmd, *last_qname = calloc(1, sizeof(char));;
+    assert(last_qname);
     MPI_Header *packed_header;
     MPI_read *packed_read = calloc(1, sizeof(MPI_read));
+    assert(packed_read);
     bam_hdr_t *header;
     bam1_t *read1 = bam_init1();
     bam1_t *read2 = bam_init1();
@@ -25,6 +27,7 @@ void worker_node(int thread_id) {
     bam1_t *debug_read = bam_init1();
     global_header = bam_hdr_init();
     void *p = calloc(100,1);
+    assert(p);
     int NODE_ID = -1;
     MPI_Comm_rank(MPI_COMM_WORLD, &NODE_ID);
     if(!config.quiet) fprintf(stderr, "NODE_ID: %i\n",NODE_ID); fflush(stderr);
@@ -46,6 +49,7 @@ void worker_node(int thread_id) {
     cmd_length += (int) 2*(strlen("-1 ") + strlen(config.FASTQ1CT)) + 3;
 
     cmd = (char *) malloc(sizeof(char) * cmd_length);
+    assert(cmd);
     if(thread_id == 1) { //OT Read#1 C->T, Read#2 G->A, Genome C->T only the + strand
         if(config.paired) {
             sprintf(cmd, "bowtie2 -q --reorder %s --norc -x %sbisulfite_genome/CT_conversion/BS_CT -1 %s -2 %s", config.bowtie2_options, config.genome_dir, config.FASTQ1CT, config.FASTQ2GA);
@@ -54,6 +58,7 @@ void worker_node(int thread_id) {
         }
 #ifdef DEBUG
         oname = malloc(sizeof(char) *(1+strlen(config.odir)+strlen(config.basename)+strlen("_OT.bam")));
+        assert(oname);
         sprintf(oname, "%s%s_OT.bam", config.odir, config.basename);
         of = sam_open(oname, "wb");
         free(oname);
@@ -66,6 +71,7 @@ void worker_node(int thread_id) {
         }
 #ifdef DEBUG
         oname = malloc(sizeof(char) *(1+strlen(config.odir)+strlen(config.basename)+strlen("_OB.bam")));
+        assert(oname);
         sprintf(oname, "%s%s_OB.bam", config.odir, config.basename);
         of = sam_open(oname, "wb");
         free(oname);
@@ -78,6 +84,7 @@ void worker_node(int thread_id) {
         }
 #ifdef DEBUG
         oname = malloc(sizeof(char) *(1+strlen(config.odir)+strlen(config.basename)+strlen("_CTOT.bam")));
+        assert(oname);
         sprintf(oname, "%s%s_CTOT.bam", config.odir, config.basename);
         of = sam_open(oname, "wb");
         free(oname);
@@ -90,6 +97,7 @@ void worker_node(int thread_id) {
         }
 #ifdef DEBUG
         oname = malloc(sizeof(char) *(1+strlen(config.odir)+strlen(config.basename)+strlen("_CTOB.bam")));
+        assert(oname);
         sprintf(oname, "%s%s_CTOB.bam", config.odir, config.basename);
         of = sam_open(oname, "wb");
         free(oname);
@@ -127,6 +135,7 @@ void worker_node(int thread_id) {
 #else
     packed_header = pack_header(header);
     void *tmp_pointer = malloc(packed_header->size);
+    assert(tmp_pointer);
     MPI_Request request;
     MPI_Isend((void *) packed_header->packed, packed_header->size, MPI_BYTE, NODE_ID, 2, MPI_COMM_WORLD, &request);
     status = MPI_Recv(tmp_pointer, packed_header->size, MPI_BYTE, NODE_ID, 2, MPI_COMM_WORLD, &stat);
@@ -155,6 +164,7 @@ void worker_node(int thread_id) {
             if(read1->core.l_qname > max_qname) {
                 max_qname = read1->core.l_qname + 10;
                 last_qname = realloc(last_qname, sizeof(char) * max_qname);
+                assert(last_qname);
             }
             strcpy(last_qname, bam_get_qname(read1));
         }
@@ -171,6 +181,7 @@ void worker_node(int thread_id) {
 #else
                 sam_write1(of, global_header, read2);
                 if(packed_read->size > current_p_size) p = realloc(p, packed_read->size);
+                assert(p);
                 MPI_Isend((void *) packed_read->packed, packed_read->size, MPI_BYTE, NODE_ID, 5, MPI_COMM_WORLD, &request);
                 status = MPI_Recv(p, packed_read->size, MPI_BYTE, NODE_ID, 5, MPI_COMM_WORLD, &stat);
                 MPI_Wait(&request, &stat);
@@ -185,6 +196,7 @@ void worker_node(int thread_id) {
         MPI_Send((void *) packed_read->packed, packed_read->size, MPI_BYTE, 0, 5, MPI_COMM_WORLD);
 #else
         if(packed_read->size > current_p_size) p = realloc(p, packed_read->size);
+        assert(p);
         MPI_Isend(packed_read->packed, packed_read->size, MPI_BYTE, NODE_ID, 5, MPI_COMM_WORLD, &request);
         status = MPI_Recv(p, packed_read->size, MPI_BYTE, NODE_ID, 5, MPI_COMM_WORLD, &stat);
         MPI_Wait(&request, &stat);
@@ -198,6 +210,7 @@ void worker_node(int thread_id) {
 #else
             sam_write1(of, global_header, read2);
             if(packed_read->size > current_p_size) p = realloc(p, packed_read->size);
+            assert(p);
             MPI_Isend((void *) packed_read->packed, packed_read->size, MPI_BYTE, NODE_ID, 5, MPI_COMM_WORLD, &request);
             status = MPI_Recv(p, packed_read->size, MPI_BYTE, NODE_ID, 5, MPI_COMM_WORLD, &stat);
             MPI_Wait(&request, &stat);
@@ -215,6 +228,7 @@ void worker_node(int thread_id) {
     packed_read->size = 0;
 #ifndef DEBUG
     void *A = malloc(1);
+    assert(A);
     MPI_Send(A, 1, MPI_BYTE, 0, 5, MPI_COMM_WORLD);
     free(A);
 #endif
