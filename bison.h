@@ -131,6 +131,7 @@ typedef struct {
     int argc;
     uint64_t maxMem;
     int sort; //To sort or not
+    int multipleFiles; //For bison_herd, if 1, there are multiple input files
 } t_config;
 
 typedef struct {
@@ -699,6 +700,7 @@ typedef struct {
     int offset; //File number offset for the temp files
     char *opref; //output file name prefix
     bam1_t **buf; //alignment buffer
+    htsFile *fp; //The output file
 } alignmentBuffer;
 
 /******************************************************************************

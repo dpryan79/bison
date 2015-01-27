@@ -1,6 +1,21 @@
 #include "../bison.h"
 #include <sys/time.h>
 
+int nMergeThreads;
+pthread_t *tids;
+
+void *mergeTempWrapper(void *pa) {
+    alignmentBuffer *abuf = (alignmentBuffer *) pa;
+
+    //Perform the actual merging
+    mergeTemp(abuf);
+
+    sam_close(abuf->fp);
+    free(abuf->buf);
+    free(abuf);
+    return NULL;
+}
+
 /******************************************************************************
 *
 *   Update the CpG/CHG/CHH metrics according to the methylation calls in a read
@@ -73,6 +88,7 @@ void herd_setup(char *fname1, char *fname2) {
         quit(2,-1);
     }
     if(!config.quiet) fprintf(stderr, "Alignments will be written to %s\n",config.outname);
+    //If we have multiple files AND we're sorting then the API only allows a single compression thread
     if(config.n_compression_threads > 1) hts_set_threads(OUTPUT_BAM, config.n_compression_threads);
     global_header = modifyHeader(global_header, config.argc, config.argv);
     sam_hdr_write(OUTPUT_BAM, global_header);
@@ -102,6 +118,9 @@ void * bam_writer(void *a) {
     alignmentBuffer *abuf = NULL;
     assert(times);
 
+    nMergeThreads = 0;
+    tids = NULL;
+
     //If we write output in the exact same order as the input, we need to know
     //how many times to write from each master_processor_thread before going to the next
     if(config.directional){
@@ -121,6 +140,7 @@ void * bam_writer(void *a) {
         assert(abuf);
         abuf->maxMem = config.maxMem;
         abuf->opref = strdup(config.basename);
+        abuf->fp = OUTPUT_BAM;
     }
 
     while(nfinished < config.nmthreads) {
@@ -147,11 +167,21 @@ void * bam_writer(void *a) {
                     if(is_finished(to_write_node[i])) goto finished;
                     if(unmapped1 != NULL) pclose(unmapped1);
                     if(unmapped2 != NULL) pclose(unmapped2);
-                    if(config.sort) mergeTemp(abuf); //This ends up blocking until the merge is complete
-                    sam_close(OUTPUT_BAM);
+                    if(config.sort) {
+                        tids = realloc(tids, sizeof(pthread_t)*(++nMergeThreads));
+                        assert(tids);
+                        pthread_create(&tids[nMergeThreads-1], NULL, mergeTempWrapper, (void*) abuf);
+                    }
                     current_file++;
                     herd_setup(fnames1[current_file], fnames2[current_file]);
-                    if(config.sort) abuf->opref = strdup(config.basename);
+                    if(config.sort) {
+                        //Reinitialize the buffer
+                        abuf = calloc(1, sizeof(alignmentBuffer));
+                        assert(abuf);
+                        abuf->maxMem = config.maxMem;
+                        abuf->opref = strdup(config.basename);
+                        abuf->fp = OUTPUT_BAM;
+                    }
                     i=0;
                     j=0;
                 }
@@ -206,9 +236,15 @@ void * bam_writer(void *a) {
 //This isn't elegant, but...
 finished:
     if(config.sort) {
-        mergeTemp(abuf);
+        if(!config.quiet) {
+            fprintf(stderr, "Waiting for merge threads to complete...");
+            fflush(stderr);
+        }
+        mergeTemp(abuf); //Can't split off a new thread, since the close function will break!
         free(abuf->buf);
         free(abuf);
+        for(i=0; i<nMergeThreads; i++) pthread_join(tids[i], 0);
+        if(!config.quiet) fprintf(stderr, "\n");
     }
 
     if(t_reads != 0) print_metrics(); //There seems to be a race condition for the last sample in a list. This gets around that.

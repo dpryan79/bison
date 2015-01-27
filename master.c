@@ -1152,6 +1152,7 @@ void * master_processer_thread(void *a) {
         assert(abuf);
         abuf->maxMem = config.maxMem;
         abuf->opref = strdup(config.basename);
+        abuf->fp = OUTPUT_BAM;
     }
 
     //Metrics

@@ -295,11 +295,18 @@ even when limited to the same resources.
   *  Somehow, the methylation extractor was still defaulting to a minimum phred
      score of 10, when the documentation said it was defaulting to 5.
 
-  *  CRAM files can now be produced and processed. Both bison and bison_herd
+  *  CRAM files can now be produced and processed. Both bison and `bison_herd`
      will output in CRAM format if the -C option is given.
 
   *  The header @PG line is now rewritten to contain the actual command
      executed and the bison/herd version.
+
+  *  Excess space allocated to hold the genome is now returned.
+
+  *  Output BAM/CRAM files can now be sorted on the fly. The method for this is
+     similar to that used by samtools, where temporary files are written and
+     then merged. This merge step is performed in parallel if multiple output
+     files are being written by `bison_herd`.
 
 ###0.3.3
 

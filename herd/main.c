@@ -187,6 +187,7 @@ int main(int argc, char *argv[]) {
     config.argv = argv;
     config.maxMem = 512<<20;
     config.sort = 0;
+    config.multipleFiles = 0;
     global_header = NULL;
     unmapped1 = NULL;
     unmapped2 = NULL;
@@ -360,7 +361,10 @@ int main(int argc, char *argv[]) {
     }
     free(tmp);
     wordfree(&p_wordexp);
-    if(multi_file>1) config.reorder=1; //We need to force --reorder if there are multiple input files
+    if(multi_file>1) {
+        config.reorder = 1; //We need to force --reorder if there are multiple input files
+        config.multipleFiles = 1;
+    }
 #ifdef DEBUG
     if(multi_file>1) {
         fprintf(stderr, "In DEBUG mode, you can't input multiple file-sets!\n");

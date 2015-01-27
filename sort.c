@@ -117,7 +117,7 @@ alignmentBuffer *pushAlignmentBuffer(alignmentBuffer *buf, bam1_t *b) {
     return buf;
 }
 
-//Merge stuff, output is to OUTPUT_BAM!
+//Merge stuff
 void mergeTemp(alignmentBuffer *buf) {
     int i, found, first, nFinished = 0, nFiles = buf->offset;
     char *opref = buf->opref;
@@ -162,7 +162,7 @@ void mergeTemp(alignmentBuffer *buf) {
             }
         }
         assert(first >= 0);
-        sam_write1(OUTPUT_BAM, global_header, bs[first]);
+        sam_write1(buf->fp, global_header, bs[first]);
         if(sam_read1(fps[first], global_header, bs[first]) <= 1) {
             bam_destroy1(bs[first]);
             bs[first] = NULL;

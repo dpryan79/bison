@@ -193,6 +193,9 @@ void read_genome() {
         fclose(fp);
         free(files[j]);
     }
+    //free excess space
+    chromosomes.genome = realloc(chromosomes.genome, sizeof(char)*offset);
+
     free(line);
     free(fullpath);
     free(files);
