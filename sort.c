@@ -45,7 +45,8 @@ void *worker(void *data) {
     worker_t *w = *((worker_t **) data);
     uint32_t i;
     htsFile *of;
-    char *oname = malloc(sizeof(char) * (strlen(w->opref)+strlen(".0000.bam ")));
+    char *oname = malloc(sizeof(char) * (strlen(w->opref)+strlen("..bam ")+ \
+        ((ndigits(w->offset)>4)?ndigits(w->offset):4)));
     assert(oname);
 
     //Sort
@@ -96,6 +97,13 @@ int sortBuffer(bam1_t **buf, uint32_t nElements, int offset, char *opref) {
     return offset+config.n_compression_threads;
 }
 
+//How many digits are in a number?
+//This is only useful if we need to create more than 10000 temp files...
+int ndigits(int n) {
+    if(n==0) return 1;
+    return floor(log10(abs(n)))+1;
+}
+
 //alignmentBuffer should contain uint32_t l,m as well as bam_t **buf and uint64_t curMem,maxMem
 //and int offset!?!?!
 alignmentBuffer *pushAlignmentBuffer(alignmentBuffer *buf, bam1_t *b) {
@@ -121,7 +129,8 @@ alignmentBuffer *pushAlignmentBuffer(alignmentBuffer *buf, bam1_t *b) {
 void mergeTemp(alignmentBuffer *buf) {
     int i, found, first, nFinished = 0, nFiles = buf->offset;
     char *opref = buf->opref;
-    char *oname = malloc(sizeof(char)*(strlen(opref)+11)); //Enough to hold the temp files
+    char *oname = malloc(sizeof(char)*(strlen(opref)+7+ \
+        ((ndigits(nFiles)>4)?ndigits(nFiles):4)));
     htsFile **fps;
     bam_hdr_t *tmpHeader;
     bam1_t **bs;
