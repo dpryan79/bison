@@ -11,21 +11,20 @@ struct CpG {
 void usage(char *prog) {
     printf("Usage: %s [OPTIONS] genome_directory/ file.bedGraph [file2.bedGraph file3.bedGraph]\n", prog);
     printf("\n\
-    Merge strand metrics for individual CpG calls (i.e. if there are separate\n\
-    methylation metrics for the C's on the + and - strand of a CpG site, combine\n\
-    them). If you specify more than one bedGraph file, they will each be merged\n\
-    independently and written to separate files.\n\
+Merge strand metrics for individual CpG calls (i.e. if there are separate\n\
+methylation metrics for the C's on the + and - strand of a CpG site, combine\n\
+them). If you specify more than one bedGraph file, they will each be merged\n\
+independently and written to separate files.\n\
 \n\
-    -h      Print this message.\n\
+-h      Print this message.\n\
 \n\
-    --genome-size Many of the bison tools need to read the genome into memory. By\n \
-            default, they allocate 3000000000 bases worth of memory for this and\n \
-            increase that as needed. However, this can sometimes be far more\n \
-            than is needed (meaning wasted memory) or far too little (in which\n \
-            case the process can become quite slow). If you input the\n \
-            approximate size of your genome here (in bases), then you can\n \
-            maximize performance and minimize wasted space. It's convenient to\n \
-            round up a little.\n \
+--genome-size Many of the bison tools need to read the genome into memory. By\n \
+        default, they allocate 3000000000 bases worth of memory for this and\n\
+        increase that as needed. However, this can sometimes be far more than\n\
+        than is needed (meaning wasted memory) or far too little (in which case\n\
+        the process can become quite slow). If you input the approximate size of\n\
+        your genome here (in bases), then you can maximize performance and\n\
+        minimize wasted space. It's convenient to round up a little.\n\
 \n");
 }
 
