@@ -1,4 +1,5 @@
 #include "bison.h"
+#include <math.h>
 
 typedef struct {
     uint32_t l;
@@ -6,6 +7,13 @@ typedef struct {
     int offset;
     char *opref;
 } worker_t;
+
+//How many digits are in a number?
+//This is only useful if we need to create more than 10000 temp files...
+int ndigits(int n) {
+    if(n==0) return 1;
+    return floor(log10(abs(n)))+1;
+}
 
 /*******************************************************************************
 *
@@ -95,13 +103,6 @@ int sortBuffer(bam1_t **buf, uint32_t nElements, int offset, char *opref) {
     free(tid);
 
     return offset+config.n_compression_threads;
-}
-
-//How many digits are in a number?
-//This is only useful if we need to create more than 10000 temp files...
-int ndigits(int n) {
-    if(n==0) return 1;
-    return floor(log10(abs(n)))+1;
 }
 
 //alignmentBuffer should contain uint32_t l,m as well as bam_t **buf and uint64_t curMem,maxMem
