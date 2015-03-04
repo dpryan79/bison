@@ -116,7 +116,7 @@ int main(int argc, char *argv[]) {
         GenomeChrom = chromosomes.chromosome[i]->chrom;
         j = chromosomes.chromosome[i]->offset;
         k = 0; //0-based chromosome position
-        while(j < chromosomes.chromosome[i]->length - 1) {
+        while(k < chromosomes.chromosome[i]->length - 1) {
             if(*(chromosomes.genome+j) == 'C' && *(chromosomes.genome+j+1) == 'G') {
                 nCpGs++;
                 while(strcmp(cur_line.chrom, GenomeChrom) == 0 && k > cur_line.position) {

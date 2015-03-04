@@ -308,6 +308,9 @@ even when limited to the same resources.
      then merged. This merge step is performed in parallel if multiple output
      files are being written by `bison_herd`.
 
+  *  Fixed a bug in bison_CpG_coverage, where previously only the first
+     chromosome was used.
+
 ###0.3.3
 
   *  Allow mixed and discordant alignments.
