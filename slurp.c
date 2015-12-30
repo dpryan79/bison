@@ -34,7 +34,7 @@ void add_element(struct packed_struct *last, void *packed) {
 *   struct packed_struct *remove: element to destroy
 *
 *******************************************************************************/
-inline void destroy_element(struct packed_struct *remove) {
+void destroy_element(struct packed_struct *remove) {
     bam1_t *pbam1_t = remove->packed;
     if(pbam1_t != NULL) {
         if(pbam1_t->data != NULL) free(pbam1_t->data);

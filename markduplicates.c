@@ -40,7 +40,7 @@ typedef struct {
 } qsort_func_struct;
 
 //Get the total phred score
-inline int32_t total_phred(bam1_t *read) {
+int32_t total_phred(bam1_t *read) {
     int32_t l = read->core.l_qseq;
     int32_t i=0, total=0;
     uint8_t *qual = bam_get_qual(read);
@@ -271,7 +271,7 @@ are on different chromosomes or different strand.\n");
            it's full). The default is 1000000.\n");
 }
 
-inline int32_t get_strand(bam1_t *read) {
+int32_t get_strand(bam1_t *read) {
     char *XG = bam_aux2Z(bam_aux_get(read, "XG"));
     char *XR = bam_aux2Z(bam_aux_get(read, "XR"));
 
@@ -294,7 +294,7 @@ inline int32_t get_strand(bam1_t *read) {
     }
 }
 
-inline int32_t get_pos(bam1_t *read) {
+int32_t get_pos(bam1_t *read) {
     int32_t pos = read->core.pos;
     uint32_t *CIGAR = bam_get_cigar(read);
     int32_t op, nops;
@@ -315,7 +315,7 @@ inline int32_t get_pos(bam1_t *read) {
 }
 
 //return the tid, such that first 2 bits denote the strand
-inline int32_t get_tid(bam1_t *read) {
+int32_t get_tid(bam1_t *read) {
     int32_t strand = get_strand(read);
 
     strand = strand << 30;
