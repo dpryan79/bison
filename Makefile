@@ -1,8 +1,8 @@
 #Please see the tutorial (http://sourceforge.net/projects/dna-bison/files/bison_tutorial.tar.gz/download) for help in setting these options.
-WORK=/home/ryand#This should be changed to match your needs
-PREFIX = $(WORK)/bin
-CC = mpicc
-HTSLIB=htslib/libhts.a #Use -lhtslib and set LIB_DIRS for dynamic linkage
+WORK?=/home/ryand#This should be changed to match your needs
+PREFIX ?= $(WORK)/bin
+CC ?= mpicc
+HTSLIB ?= htslib/libhts.a #Use -lhtslib and set LIB_DIRS for dynamic linkage
 INCLUDE_DIRS = -Ihtslib
 LIB_DIRS =
 OPTS = -Wall -g #-DDEBUG #-DNOTHROTTLE
