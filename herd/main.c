@@ -150,17 +150,6 @@ int main(int argc, char *argv[]) {
     char processor_name[MPI_MAX_PROCESSOR_NAME];
 #endif
 
-    //Deal with MPI initialization, this seems like an odd way to do things.
-    MPI_Init_thread(NULL, NULL, MPI_THREAD_MULTIPLE, &provided);
-    if(provided != MPI_THREAD_MULTIPLE) {
-        fprintf(stderr, "You're MPI implementation doesn't support MPI_THREAD_MULTIPLE, which is required for bison_herd to work.\n");
-        return -1;
-    }
-#ifndef DEBUG
-    MPI_Comm_rank(MPI_COMM_WORLD, &taskid);
-    MPI_Get_processor_name(processor_name, &name_len);
-#endif
-
     config.odir = NULL;
     config.paired = 0; //Default is single-ended
     config.directional = 0; //Default is non-directional
@@ -329,6 +318,16 @@ int main(int argc, char *argv[]) {
             strcat(config.bowtie2_options, argv[i]);
         }
     }
+
+    MPI_Init_thread(NULL, NULL, MPI_THREAD_MULTIPLE, &provided);
+    if(provided != MPI_THREAD_MULTIPLE) {
+        fprintf(stderr, "You're MPI implementation doesn't support MPI_THREAD_MULTIPLE, which is required for bison_herd to work.\n");
+        return -1;
+    }
+#ifndef DEBUG
+    MPI_Comm_rank(MPI_COMM_WORLD, &taskid);
+    MPI_Get_processor_name(processor_name, &name_len);
+#endif
 
     if(config.FASTQ1 == NULL || config.genome_dir == NULL || (config.FASTQ2 == NULL && config.paired == 1)) {
         if(taskid == MASTER) {
