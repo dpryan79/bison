@@ -1,0 +1,10 @@
+sudo: false
+language: c
+os:
+  - linux
+  - osx
+env: MPI=openmpi
+script: make
+compiler:
+  - clang
+  - gcc

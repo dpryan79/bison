@@ -76,7 +76,7 @@ int get_AS(bam1_t *read) {
 *   int32_t rlen: a read length
 *
 *******************************************************************************/
-inline int scoreMin(int32_t rlen) {
+int scoreMin(int32_t rlen) {
     //Return different values, depending on --score-min
     if(config.scoremin_type == 'L') {
         return (config.scoremin_intercept + config.scoremin_coef * rlen);

@@ -102,19 +102,6 @@ int main(int argc, char *argv[]) {
     char processor_name[MPI_MAX_PROCESSOR_NAME];
 #endif
 
-    //Deal with MPI initialization, this seems like an odd way to do things.
-#ifndef DEBUG
-    MPI_Init_thread(NULL, NULL, MPI_THREAD_FUNNELED, &provided);
-    MPI_Comm_rank(MPI_COMM_WORLD, &taskid);
-    MPI_Get_processor_name(processor_name, &name_len);
-#else
-    MPI_Init_thread(NULL, NULL, MPI_THREAD_FUNNELED, &provided);
-#endif
-    if(provided != MPI_THREAD_FUNNELED) {
-        fprintf(stderr, "Your implementation does not support MPI_THREAD_FUNNELED, which is required for bison to run. This is actually quite unusual!\n");
-        return -1;
-    }
-
     config.odir = NULL;
     config.paired = 0; //Default is single-ended
     config.directional = 0; //Default is non-directional
@@ -248,6 +235,18 @@ int main(int argc, char *argv[]) {
             strcat(config.bowtie2_options, " ");
             strcat(config.bowtie2_options, argv[i]);
         }
+    }
+
+#ifndef DEBUG
+    MPI_Init_thread(NULL, NULL, MPI_THREAD_FUNNELED, &provided);
+    MPI_Comm_rank(MPI_COMM_WORLD, &taskid);
+    MPI_Get_processor_name(processor_name, &name_len);
+#else
+    MPI_Init_thread(NULL, NULL, MPI_THREAD_FUNNELED, &provided);
+#endif
+    if(provided != MPI_THREAD_FUNNELED) {
+        fprintf(stderr, "Your implementation does not support MPI_THREAD_FUNNELED, which is required for bison to run. This is actually quite unusual!\n");
+        return -1;
     }
 
 #ifndef DEBUG
