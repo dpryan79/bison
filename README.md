@@ -1,11 +1,11 @@
-#Bison: bisulfite alignment on nodes of a cluster.
+# Bison: bisulfite alignment on nodes of a cluster.
 
 **N.B.: There is now a tutorial available [here](http://sourceforge.net/projects/dna-bison/files/bison_tutorial.tar.gz/download). This tutorial largely replaces this README file and users are encouraged to read it.**
 
 If you use Bison in your work please site the following:
 [Ryan D.P. and Ehninger D. **Bison: bisulfite alignment on nodes of a cluster.** *BMC Bioinformatics* 2014, Oct 18;**15**(1):337](http://www.biomedcentral.com/1471-2105/15/337)
 
-##Usage
+## Usage
 
 One can index all fasta files (files with extension .fa or .fasta) in a
 directory as follows:
@@ -66,11 +66,12 @@ judgement).
 
 See the "Auxiliary files" section, below, for additional files.
 
-##Auxiliary files
+## Auxiliary files
 
 The following programs and scripts will be available if you type "make auxiliary":
 
-###bedGraph2BSseq.py
+### bedGraph2BSseq.py
+
 This python script can accept a filename prefix and the names of at least 2
 bedGraph files and output 3 files for input into BSseq. A single chromosome can
 be processed at a time, if desired, by using the -chr option. The output files
@@ -94,18 +95,18 @@ BS1 <- BSseq(M=M, Cov=Cov, gr=gr, pData=groups, sampleNames=colnames(M)) #You'll
 ```
 
 
-###`bedGraph2methylKit`
+### `bedGraph2methylKit`
 As above, but each bedGraph file is converted to a .methylKit file. The
 bedGraphs should be of CpGs and not have had the strands merged (i.e., don't run
 the merge_CpGs command below).
 
-###`bedGraph2MOABS`
+### `bedGraph2MOABS`
 Like `bedGraph2methylKit`, but each bedGraph file is converted to a .moabs file.
 The bedGraph files should ideally contain single-C metrics rather than having
 been merged to form CpG metrics, though both are supported. The resulting .moabs
 files can then be used by `mcomp` in the MOABS package.
 
-###`bedGraph2MethylSeekR`
+### `bedGraph2MethylSeekR`
 As above, but each bedGraph file is converted into a .MethylSeekR file. The
 bedGraphs MUST be merged before-hand with bison_merge_CpGs to create per-CpG
 metrics, as this is what MethylSeekR is expecting. Input is performed with the
@@ -121,17 +122,17 @@ names(chromosome_lengths) <- fai$V1
 d <- readMethylome("file.MethylSeekR", chromosome_lengths)
 ```
 
-###`make_reduced_genome`
+### `make_reduced_genome`
 Create a reduced representation genome appropriate for reads of a given size
 ($size, default is 36bp). MspI and TaqI libraries are supported. Nucleotides
 greater than $size+10% are converted to N.
 
-###`merge_bedGraphs.py`
+### `merge_bedGraphs.py`
 This will merge bedGraphs from technical replicates of a single sample into a
 single bedGraph file, summing the methylation metrics as it goes. The output,
 like the input is coordinate sorted.
 
-###`bison_merge_CpGs`
+### `bison_merge_CpGs`
 Methylation is usually symmetric at CpG sites. While the output bedGraph files
 have a single-C resolution, this will convert that to single-CpG resolution by
 summing Cs in the same CpG from opposite strands. This saves space and will
@@ -143,7 +144,7 @@ packages either do not require a helper script or can use one of the
 aforementioned scripts. Import instructions for such packages are mentioned
 below.
 
-###BiSeq
+### BiSeq
 BiSeq requires input in an identical format as BSseq. Consequently, just use the
 bedGraph2BSseq.py helper script. The following example commands should then
 suffice to load everything into R:
@@ -159,7 +160,7 @@ groups <- DataFrame(row.names=colnames(M),
 d <- BSraw(exptData=exptData, rowData=gr, colData=groups, totalReads=Cov, methReads=M)
 ```
 
-###BEAT
+### BEAT
 The BEAT Bioconductor package conveniently expects per-sample position and
 methylation information in a format already present in bedGraph files. However,
 this information is in a slightly different format than bedGraph, so the
@@ -169,7 +170,7 @@ sample_name.positions.csv.
     awk '{if(NR>1){printf("%s,%i,%i,%i\n",$1,$2+1,$5,$6)}else{printf("chr,pos,meth,unmeth\n")}}' sample.bedGraph > sample.positions.csv
 
 
-##Advanced bison_herd usage
+## Advanced bison_herd usage
 
 `bison_herd` has the ability to use a semi-arbitrary number of nodes. In practice,
 if bison is given N nodes, it will effectively use `2*((N-1)/2)+1` or
@@ -222,7 +223,7 @@ Even when --reorder is used, if there is >1 second between these, then you may
 benefit from increasing the number of compression threads. For those curious,
 this option is identical to that used in samtools.
 
-##Throttling
+## Throttling
 
 `bison_herd` generally uses blocking, but not synchronous sends. What this means
 in practice is that many reads will be queued by the master node for sending to
@@ -245,7 +246,7 @@ Throttling is not always required, particularly as an increasing number of nodes
 are used. Throttling can be disabled altogether by compiling with -DNOTHROTTLE,
 which will remove all related components.
 
-##Debug mode
+## Debug mode
 
 For debugging, a special debug mode is available for both bison and `bison_herd`
 by compiling with -DDEBUG. Instead of running of needing multiple nodes, both
@@ -266,7 +267,7 @@ non-directional reads.
 In general, this mode should not be used unless you are running into extremely
 odd bugs.
 
-##Compatibility with Bismark
+## Compatibility with Bismark
 
 Bison is generally similar to bismark, however the indexes are incompatible,
 due to bismark renaming contigs. Also, the two will not produce identical 
@@ -274,16 +275,16 @@ output, due to algorithmic differences. Running `bison_methylation_extractor`
 on the output of bismark will also produce different results, again due to
 algorithmic differences. In addition, bison always outputs BAM files directly.
 
-##Other details
+## Other details
 
 Bison needn't be run on multiple computers. You can also use a single
 computer for all compute nodes (e.g. mpiexec -n 5 bison ...). The same holds
 true for `bison_herd`. Both bison and `bison_herd` seem to be faster than bismark,
 even when limited to the same resources.
 
-##Changes
+## Changes
 
-###0.4.0
+### 0.4.0
 
   *  Allow lower case reads in fastq files (previously, this would result in
      corrupt BAM files.
@@ -311,15 +312,15 @@ even when limited to the same resources.
   *  Fixed a bug in bison_CpG_coverage, where previously only the first
      chromosome was used.
 
-###0.3.3
+### 0.3.3
 
   *  Allow mixed and discordant alignments.
 
-###0.3.2b
+### 0.3.2b
 
   *  Fix the Makefile to use the static htslib library.
 
-###0.3.2
+### 0.3.2
   *  Added bedGraph2MOABS to convert bedGraph files for use by MOABS. See usage
      above.
 
@@ -335,7 +336,7 @@ even when limited to the same resources.
   *  The default minimum MAPQ and Phred scores used by `bison_mbias` have been
      updated to match `bison_methylation_extractor`.
 
-###0.3.1
+### 0.3.1
   *  The various bedGraph files didn't previously have a "track" line. The UCSC
      Genome Browser requires this, so bedGraph files produced will now contain 
      it. It should be noted that this is the very minimal line required. Bison
@@ -355,7 +356,7 @@ even when limited to the same resources.
      MAPQ, this one will do that for the read/pair with the highest summed phred
      score (a la picard).
 
-###0.3.0
+### 0.3.0
   *  Note: The indices produced by previous versions are not guaranteed to be
      compatible unless you used a multi-fasta file. There was a serious
      implementation problem with how `bison_index` worked when given multiple
@@ -387,7 +388,7 @@ even when limited to the same resources.
 
   *  A number of small bug fixes, such as when "genome_dir" doesn't end in a /.
 
-###0.2.4
+### 0.2.4
   *  Fixed an off-by-one error in bison_mbias. Also, at some point 1-methylation
      percentage started getting calculated. That's been fixed.
 
@@ -399,7 +400,7 @@ even when limited to the same resources.
      single-C bedGraph files before (if they were merged, then they were being
      handled correctly).
 
-###0.2.3
+### 0.2.3
   *  Fix how hard and soft-clipped bases are dealt with (previously, soft-
      clipped bases resulted in an error and hard-clipped bases in incorrect
      position assignments!).
@@ -429,7 +430,7 @@ even when limited to the same resources.
      (effectively the more verbose version of the MD tag) contains soft-clipped
      sequences. I could probably have these removed if someone would like.
 
-###0.2.2
+### 0.2.2
   *  Properly fixed some wording on the textual output (i.e., removed the word
      "unique").
 
@@ -437,7 +438,7 @@ even when limited to the same resources.
      extractor to 10 each. That the MAPQ threshold was originally
      20 was an error on my part.
 
-###0.2.1
+### 0.2.1
   *  Added support for file globbing in bison_herd. You may now input multiple
      files using a combination of wild-cards (*, ?, etc.) and commas. Remember
      to put these in quotes (e.g., "foo/*1.fq.gz","bar/*1.fq.gz") so the shell
@@ -484,7 +485,7 @@ even when limited to the same resources.
 
   *  Fixed a bug in bison_herd that allowed early termination without warning.
 
-###0.2.0
+### 0.2.0
   *  Added a note to the methylation summary statistics output at the end of a
      run that the numbers will include double counting of any site covered by
      both mates in a pair. These metrics are only meant for general information
@@ -512,7 +513,7 @@ even when limited to the same resources.
      actually supports the level of thread support requested (previously, this
      was just assumed).
 
-###0.1.1
+### 0.1.1
   *  Fixed a number of minor bugs.
 
   *  Added support for uncompressed fastq files, as well as bzipped files
@@ -545,5 +546,5 @@ even when limited to the same resources.
      an RRBS genome and other possibly useful functions.
 
 
-###0.1.0
+### 0.1.0
   Initial release
